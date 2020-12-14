@@ -1,8 +1,7 @@
 package config
 
 import (
-	"fmt"
-
+	"github.com/apex/log"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -10,6 +9,10 @@ import (
 var (
 	conn Connection
 )
+
+func init() {
+	c.RegisterConfig(conn)
+}
 
 // Connection 数据库连接
 type Connection struct {
@@ -23,7 +26,7 @@ func (c Connection) Config(configs *Configs) {
 	if err != nil {
 		panic("Failed to connect to database")
 	}
-	fmt.Println("connect successfully")
+	log.Info("connect database successfully")
 }
 
 // GetDBConn 获取DB连接

@@ -1,5 +1,7 @@
 package config
 
+import "github.com/apex/log"
+
 var (
 	c          Configs //全局配置结构体
 	configured bool    //是否已配置
@@ -26,25 +28,26 @@ type Config interface {
 // DoConfigAll 批量配置所有
 func (c *Configs) DoConfigAll() {
 	if !configured {
+		// 创建n个缓冲通道 来实现waitGroup
+		done := make(chan struct{}, len(c.configs))
 		for _, v := range c.configs {
-			v.Config(c)
+			go func(config Config) {
+				log.Infof("configuring:\t%T", config)
+				config.Config(c)
+				done <- struct{}{}
+			}(v)
 		}
+		<-done
 	}
 	configured = true
 }
 
-// 注册配置
-func (c *Configs) registerConfig(config Config) {
+// RegisterConfig 注册配置
+func (c *Configs) RegisterConfig(config Config) {
 	c.configs = append(c.configs, config)
 }
 
 // GetConfigs 注册所有配置
 func GetConfigs() *Configs {
-	registerAll()
 	return &c
-}
-
-func registerAll() {
-	// 注册数据库配置
-	c.registerConfig(conn)
 }

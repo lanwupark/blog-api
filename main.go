@@ -2,8 +2,9 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	"net/http"
 
+	"github.com/apex/log"
 	"github.com/lanwupark/blog-api/config"
 	"github.com/lanwupark/blog-api/data"
 )
@@ -18,13 +19,18 @@ func init() {
 }
 
 func main() {
-	fmt.Println("Hello World!")
-
+	log.Info("Hello World!")
 	flag.Parse()
 	// 配置所有
 	c.DoConfigAll()
 	conn := config.GetDBConn()
 	var user data.User
 	conn.First(&user)
-	fmt.Println(user)
+	log.Infof("%v", user)
+	mux := config.GetRouter()
+	mux.HandleFunc("/hello", func(rw http.ResponseWriter, req *http.Request) {
+		rw.Write([]byte("xixiixix"))
+	})
+	// 让main函数阻塞 防止程序退出
+	select {}
 }
