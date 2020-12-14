@@ -2,12 +2,24 @@ package main
 
 import (
 	"flag"
-	"net/http"
+	"os"
+	"os/signal"
 
 	"github.com/apex/log"
 	"github.com/lanwupark/blog-api/config"
-	"github.com/lanwupark/blog-api/data"
+	"github.com/lanwupark/blog-api/handler"
 )
+
+var banner string = `                                  
+
+██╗      █████╗ ███╗   ██╗██╗    ██╗██╗   ██╗██████╗  █████╗ ██████╗ ██╗  ██╗    ██████╗ ██╗      ██████╗  ██████╗ 
+██║     ██╔══██╗████╗  ██║██║    ██║██║   ██║██╔══██╗██╔══██╗██╔══██╗██║ ██╔╝    ██╔══██╗██║     ██╔═══██╗██╔════╝ 
+██║     ███████║██╔██╗ ██║██║ █╗ ██║██║   ██║██████╔╝███████║██████╔╝█████╔╝     ██████╔╝██║     ██║   ██║██║  ███╗
+██║     ██╔══██║██║╚██╗██║██║███╗██║██║   ██║██╔═══╝ ██╔══██║██╔══██╗██╔═██╗     ██╔══██╗██║     ██║   ██║██║   ██║
+███████╗██║  ██║██║ ╚████║╚███╔███╔╝╚██████╔╝██║     ██║  ██║██║  ██║██║  ██╗    ██████╔╝███████╗╚██████╔╝╚██████╔╝
+╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝ ╚══╝╚══╝  ╚═════╝ ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝    ╚═════╝ ╚══════╝ ╚═════╝  ╚═════╝ 
+                                                                                                                   
+`
 
 var (
 	c = config.GetConfigs()
@@ -19,18 +31,32 @@ func init() {
 }
 
 func main() {
-	log.Info("Hello World!")
-	flag.Parse()
-	// 配置所有
-	c.DoConfigAll()
-	conn := config.GetDBConn()
-	var user data.User
-	conn.First(&user)
-	log.Infof("%v", user)
-	mux := config.GetRouter()
-	mux.HandleFunc("/hello", func(rw http.ResponseWriter, req *http.Request) {
-		rw.Write([]byte("xixiixix"))
-	})
-	// 让main函数阻塞 防止程序退出
-	select {}
+	flag.Parse()                 // 解析参数
+	registerHTTPRequestHanlder() // 配置请求Controller
+	c.LoadConfigs()              // 加载所有配置
+	log.Info(banner)             // banner
+	hookFunc()                   // 钩子函数
+	select {}                    // 让main函数阻塞 防止程序退出
+}
+
+func registerHTTPRequestHanlder() {
+	// 获取封装得默认路由 默认路由是mux的封装 它会自动加到配置里去
+	router := config.GetDefaultRouter()
+	// userHandler
+	router.AddHTTPRequestHanlder(handler.NewUserHandler())
+}
+
+// hookFunc 用于平滑退出程序
+func hookFunc() {
+	go func() {
+		// 使用os/signal包里 通知某种信号来告知程序关闭服务器
+		sigChannel := make(chan os.Signal)
+		// 当收到终止或kill命令时，会向sigChan发送
+		signal.Notify(sigChannel, os.Interrupt, os.Kill)
+		// 在未收到信号前 这里是阻塞的
+		sig := <-sigChannel
+		log.Warnf("received terminated signal , graceful shutdown:%v", sig)
+		// 结束所有服务
+		c.ShutdownAll()
+	}()
 }
