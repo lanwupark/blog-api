@@ -26,9 +26,10 @@ type Router struct {
 
 // Route 路由 wrapper
 type Route struct {
-	Method  string
-	Path    string
-	Handler http.HandlerFunc
+	Method          string               //方法类型
+	Path            string               //路由路径
+	Handler         http.HandlerFunc     //处理器
+	MiddlewareFuncs []mux.MiddlewareFunc //中间件
 }
 
 // HTTPRequestHandler http请求的handler
@@ -92,6 +93,9 @@ func (r *Router) configAllRoute() {
 	for _, handler := range r.handlers {
 		for _, route := range handler.GetRoutes() {
 			r := router.Methods(route.Method).Subrouter()
+			// 使用中间件
+			r.Use(route.MiddlewareFuncs...)
+			// 映射处理函数
 			r.HandleFunc(route.Path, route.Handler)
 		}
 	}

@@ -6,11 +6,11 @@ import (
 
 // User 用户
 type User struct {
-	UserID    int       `json:"UserId" gorm:"primaryKey"`
+	UserID    uint      `json:"UserId" gorm:"primaryKey"`
 	UserLogin string    `json:"Login"`
 	IsAdmin   bool      `json:"IsAdmin"`
-	CreateAt  time.Time `json:"CreateAt"`
-	UpdateAt  time.Time `json:"UpdateAt"`
+	CreateAt  time.Time `json:"-"`
+	UpdateAt  time.Time `json:"-"`
 }
 
 // Category 文章分类

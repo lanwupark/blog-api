@@ -28,11 +28,13 @@ var (
 func init() {
 	flag.StringVar(&c.DSN, "dsn", "root:123456@tcp(127.0.0.1:3306)/blog?charset=utf8mb4&parseTime=True&loc=Local", "dabatase connection string")
 	flag.StringVar(&c.BindAdreess, "address", ":8080", "server address")
+	flag.StringVar(&c.OAuthClientID, "oauth-id", "", "github oauth client id")
+	flag.StringVar(&c.OAuthClientID, "oauth-secret", "", "github oauth client secret")
 }
 
 func main() {
 	flag.Parse()                 // 解析参数
-	registerHTTPRequestHanlder() // 配置请求Controller
+	registerHTTPRequestHanlder() // 配置请求Handler
 	c.LoadConfigs()              // 加载所有配置
 	log.Info(banner)             // banner
 	hookFunc()                   // 钩子函数
@@ -43,7 +45,9 @@ func registerHTTPRequestHanlder() {
 	// 获取封装得默认路由 默认路由是mux的封装 它会自动加到配置里去
 	router := config.GetDefaultRouter()
 	// userHandler
-	router.AddHTTPRequestHanlder(handler.NewUserHandler())
+	router.AddHTTPRequestHanlder(handler.GetUserHandlerInstance())
+	// oauthHandler
+	router.AddHTTPRequestHanlder(handler.GetOAuthHandlerInstance())
 }
 
 // hookFunc 用于平滑退出程序

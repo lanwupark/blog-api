@@ -8,16 +8,18 @@ var (
 	finished   bool
 )
 
-// GlobalConfigStrings 全局配置字符串
-type GlobalConfigStrings struct {
-	DSN         string //数据库连接串
-	BindAdreess string //url
-	FileBaseDir string //文件存储基础位置
+// ApplicationProperties 全局配置字符串
+type ApplicationProperties struct {
+	DSN               string //数据库连接串
+	BindAdreess       string //url
+	FileBaseDir       string //文件存储基础位置
+	OAuthClientID     string //github OAuth 的client ID
+	OAuthClientSecret string //github OAuth 的client secret
 }
 
 // Configs 所有配置
 type Configs struct {
-	GlobalConfigStrings
+	ApplicationProperties
 	services []Service
 }
 
