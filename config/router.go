@@ -108,8 +108,9 @@ func (r *Router) configAllRoute() {
 }
 
 // AddHTTPRequestHanlder 添加
-func (r *Router) AddHTTPRequestHanlder(hanlder HTTPRequestHandler) {
+func (r *Router) AddHTTPRequestHanlder(hanlder HTTPRequestHandler) *Router {
 	r.handlers = append(r.handlers, hanlder)
+	return r
 }
 
 // GetDefaultRouter 获取路由

@@ -48,6 +48,7 @@ func registerHTTPRequestHanlder() {
 	router.AddHTTPRequestHanlder(handler.GetUserHandlerInstance())
 	// oauthHandler
 	router.AddHTTPRequestHanlder(handler.GetOAuthHandlerInstance())
+	router.AddHTTPRequestHanlder(handler.GetCategoryHandlerInstance())
 }
 
 // hookFunc 用于平滑退出程序
