@@ -8,7 +8,6 @@ import (
 )
 
 var (
-	conn    = config.GetConnection()
 	userdao *userDao
 	once    sync.Once
 )
@@ -26,9 +25,8 @@ func GetUserDaoInstance() *userDao {
 
 // SelectAll 查询所有
 func (userDao) SelectAll() []*data.User {
-	db := conn.DB
+	db := config.GetDB()
 	var users []*data.User
-	// select * from users
-	db.Find(&users)
+	db.Select(&users, "SELECT * FROM users")
 	return users
 }

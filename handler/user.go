@@ -16,10 +16,6 @@ var (
 	userHanlder *userHandler
 )
 
-func init() {
-
-}
-
 // userHandler 处理用户表的接口
 type userHandler struct {
 }
@@ -34,17 +30,30 @@ func GetUserHandlerInstance() *userHandler {
 
 // GetRoutes 获取该handler下所有路由
 func (u *userHandler) GetRoutes() []*config.Route {
-	route := &config.Route{
+	usersRoute := &config.Route{
 		Method:          http.MethodGet,
 		Path:            "/users",
 		Handler:         u.GetUsers,
-		MiddlewareFuncs: []mux.MiddlewareFunc{MiddlewareJWTAuthorization},
+		MiddlewareFuncs: []mux.MiddlewareFunc{},
 	}
-	return []*config.Route{route}
+	userRoute := &config.Route{
+		Method:          http.MethodGet,
+		Path:            "/user",
+		Handler:         u.GetUser,
+		MiddlewareFuncs: []mux.MiddlewareFunc{MiddlewareRequireAuthorization},
+	}
+	return []*config.Route{usersRoute, userRoute}
 }
 
 // GetUsers 获取用户
 func (userHandler) GetUsers(rw http.ResponseWriter, req *http.Request) {
 	users := userdao.SelectAll()
-	data.ToJSON(users, rw)
+	resp := data.NewResultListResponse(users)
+	data.ToJSON(resp, rw)
+}
+
+// GetUser 获取用户
+func (userHandler) GetUser(rw http.ResponseWriter, req *http.Request) {
+	user := req.Context().Value(userStructKey{}).(*data.User)
+	data.ToJSON(user, rw)
 }

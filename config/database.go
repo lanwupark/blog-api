@@ -2,12 +2,13 @@ package config
 
 import (
 	"github.com/apex/log"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 )
 
 var (
 	conn = new(Connection)
+	db   *sqlx.DB
 )
 
 func init() {
@@ -16,29 +17,20 @@ func init() {
 
 // Connection 数据库连接
 type Connection struct {
-	DB *gorm.DB
 }
 
 // Config 实现配置接口
 func (c *Connection) Config(configs *Configs) {
-	db, err := gorm.Open(mysql.Open(configs.DSN), &gorm.Config{})
-	if err != nil {
-		panic("Failed to connect to database")
-	}
+	db = sqlx.MustConnect("mysql", configs.DSN)
 	log.Info("connect database successfully")
-	c.DB = db
 }
 
 // Shutdown 结束
 func (c *Connection) Shutdown() {
-	sqlDB, err := conn.DB.DB()
-	if err != nil {
-		log.WithError(err).Error("")
-	}
-	sqlDB.Close()
+	db.Close()
 }
 
-// GetConnection 获取DB连接
-func GetConnection() *Connection {
-	return conn
+// GetDB 获取DB连接
+func GetDB() *sqlx.DB {
+	return db
 }

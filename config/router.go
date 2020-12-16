@@ -2,14 +2,17 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
+	"runtime/debug"
 	"time"
 
 	"github.com/apex/httplog"
 	"github.com/apex/log"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/lanwupark/blog-api/data"
 )
 
 var (
@@ -93,8 +96,11 @@ func (r *Router) configAllRoute() {
 	for _, handler := range r.handlers {
 		for _, route := range handler.GetRoutes() {
 			r := router.Methods(route.Method).Subrouter()
+			// 添加默认的两个中间件
+			middlewares := []mux.MiddlewareFunc{recoveryMiddleware, contentTypeJSONMiddleware}
+			middlewares = append(middlewares, route.MiddlewareFuncs...)
 			// 使用中间件
-			r.Use(route.MiddlewareFuncs...)
+			r.Use(middlewares...)
 			// 映射处理函数
 			r.HandleFunc(route.Path, route.Handler)
 		}
@@ -109,4 +115,31 @@ func (r *Router) AddHTTPRequestHanlder(hanlder HTTPRequestHandler) {
 // GetDefaultRouter 获取路由
 func GetDefaultRouter() *Router {
 	return r
+}
+
+// recoveryMiddleware 程序返回500
+func recoveryMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		defer func() {
+			// 利用recover()函数捕捉panic异常  并向客户端返回状态码
+			if err := recover(); err != nil {
+				rw.WriteHeader(http.StatusInternalServerError)
+				msg := fmt.Sprintf("%s", err)
+				log.Errorf("internal server error: %s", msg)
+				resp := data.NewFailedResponse(msg, http.StatusInternalServerError)
+				data.ToJSON(resp, rw)
+				// 打印堆栈信息
+				debug.PrintStack()
+			}
+		}()
+		next.ServeHTTP(rw, req)
+	})
+}
+
+// contentTypeJSONMiddleware 返回头里面有 Content-type
+func contentTypeJSONMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		rw.Header().Add("Content-Type", "application/json")
+		next.ServeHTTP(rw, req)
+	})
 }

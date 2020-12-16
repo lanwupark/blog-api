@@ -10,7 +10,8 @@ import (
 )
 
 var (
-	secretKey = []byte("eansonG&%34R&R") //密钥 写死了的
+	secretKey   = []byte("eansonG&%34R&R") //密钥 写死了的
+	expiredTime = time.Minute * 30         //过期时间 30分钟
 )
 
 // CreateToken 创建token
@@ -23,7 +24,7 @@ func CreateToken(user *data.User) (tokenString string, err error) {
 	claims := &jwt.StandardClaims{
 		Issuer:    "eanson",                                  //签发人 我写我自己^_^
 		NotBefore: time.Now().Unix(),                         //生效时间
-		ExpiresAt: int64(time.Now().Add(time.Minute).Unix()), // 过期时间
+		ExpiresAt: int64(time.Now().Add(expiredTime).Unix()), // 过期时间
 		Subject:   subject,                                   //主体 json数据
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -42,6 +43,9 @@ func ParseToken(tokenString string) (user *data.User, err error) {
 		// secretKey is a []byte containing your secret, e.g. []byte("my_secret_key")
 		return secretKey, nil
 	})
+	if err != nil {
+		return nil, err
+	}
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		err = data.FromJSONString(claims["sub"].(string), &user)
 		if err != nil {
