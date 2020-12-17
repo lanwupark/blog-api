@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"runtime/debug"
+	"sync"
 	"time"
 
 	"github.com/apex/httplog"
@@ -16,9 +17,10 @@ import (
 )
 
 var (
-	r      = NewRouter()
-	routes = []*Route{} // 初始化子路由
-	server *http.Server
+	r          = NewRouter()
+	routes     = []*Route{} // 初始化子路由
+	server     *http.Server
+	routerOnce sync.Once
 )
 
 // Router 小小路由封装
@@ -40,10 +42,7 @@ type HTTPRequestHandler interface {
 	GetRoutes() []*Route
 }
 
-func init() {
-	// 注册该服务
-	c.RegisterService(r)
-}
+func registerHTTPHandlers() {}
 
 // NewRouter 新建router
 func NewRouter() *Router {
@@ -115,6 +114,9 @@ func (r *Router) AddHTTPRequestHanlder(hanlder HTTPRequestHandler) *Router {
 
 // GetDefaultRouter 获取路由
 func GetDefaultRouter() *Router {
+	routerOnce.Do(func() {
+
+	})
 	return r
 }
 

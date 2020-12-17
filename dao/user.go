@@ -1,31 +1,20 @@
 package dao
 
 import (
-	"sync"
-
-	"github.com/lanwupark/blog-api/config"
 	"github.com/lanwupark/blog-api/data"
 )
 
-var (
-	userdao *userDao
-	once    sync.Once
-)
+// UserDao 数据访问层
+type UserDao struct{}
 
-// user数据访问层
-type userDao struct{}
-
-// GetUserDaoInstance 获取用户DAO实例
-func GetUserDaoInstance() *userDao {
-	once.Do(func() {
-		userdao = &userDao{}
-	})
-	return userdao
+// NewUserDao 获取用户DAO实例
+func NewUserDao() *UserDao {
+	return &UserDao{}
 }
 
 // SelectAll 查询所有
-func (userDao) SelectAll() []*data.User {
-	db := config.GetDB()
+func (UserDao) SelectAll() []*data.User {
+	db := conn.DB
 	var users []*data.User
 	db.Select(&users, "SELECT * FROM users")
 	return users

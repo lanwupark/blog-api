@@ -8,27 +8,25 @@ import (
 )
 
 var (
-	oauthHandler *oAuthHandler
+	oauthHandler *OAuthHandler
 	oauthOnce    sync.Once
 )
 
 // OAuthHandler 获取github第三方授权
-type oAuthHandler struct{}
+type OAuthHandler struct{}
 
-// GetOAuthHandlerInstance 获取OAuthHandler单例对象
-func GetOAuthHandlerInstance() *oAuthHandler {
-	oauthOnce.Do(func() {
-		oauthHandler = &oAuthHandler{}
-	})
-	return oauthHandler
+// NewOAuthHandler 获取OAuthHandler单例对象
+func NewOAuthHandler() *OAuthHandler {
+	return &OAuthHandler{}
 }
 
 // LoginOAuth 获取登录令牌
-func (oAuthHandler) LoginOAuth(rw http.ResponseWriter, req *http.Request) {
+func (OAuthHandler) LoginOAuth(rw http.ResponseWriter, req *http.Request) {
 	rw.Write([]byte("Hello World"))
 }
 
-func (o *oAuthHandler) GetRoutes() []*config.Route {
+// GetRoutes 实现接口
+func (o *OAuthHandler) GetRoutes() []*config.Route {
 	route := &config.Route{
 		Method:  http.MethodGet,
 		Path:    "/oauth/redirect",

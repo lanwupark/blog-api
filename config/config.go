@@ -2,6 +2,16 @@ package config
 
 import "github.com/apex/log"
 
+var banner string = `                                  
+
+██╗      █████╗ ███╗   ██╗██╗    ██╗██╗   ██╗██████╗  █████╗ ██████╗ ██╗  ██╗    ██████╗ ██╗      ██████╗  ██████╗ 
+██║     ██╔══██╗████╗  ██║██║    ██║██║   ██║██╔══██╗██╔══██╗██╔══██╗██║ ██╔╝    ██╔══██╗██║     ██╔═══██╗██╔════╝ 
+██║     ███████║██╔██╗ ██║██║ █╗ ██║██║   ██║██████╔╝███████║██████╔╝█████╔╝     ██████╔╝██║     ██║   ██║██║  ███╗
+██║     ██╔══██║██║╚██╗██║██║███╗██║██║   ██║██╔═══╝ ██╔══██║██╔══██╗██╔═██╗     ██╔══██╗██║     ██║   ██║██║   ██║
+███████╗██║  ██║██║ ╚████║╚███╔███╔╝╚██████╔╝██║     ██║  ██║██║  ██║██║  ██╗    ██████╔╝███████╗╚██████╔╝╚██████╔╝
+╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝ ╚══╝╚══╝  ╚═════╝ ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝    ╚═════╝ ╚══════╝ ╚═════╝  ╚═════╝ 
+                                                                                                                   
+`
 var (
 	c          Configs //全局配置结构体
 	configured bool    //是否已配置
@@ -11,6 +21,8 @@ var (
 // ApplicationProperties 全局配置字符串
 type ApplicationProperties struct {
 	DSN               string //数据库连接串
+	MongoURL          string //mongodb 连接串
+	MongoDatabase     string //mongodb 数据库
 	BindAdreess       string //url
 	FileBaseDir       string //文件存储基础位置
 	OAuthClientID     string //github OAuth 的client ID
@@ -27,6 +39,12 @@ type Configs struct {
 type Service interface {
 	Config(c *Configs)
 	Shutdown()
+}
+
+// RegisterServices 注册所有服务 扩展的服务需要写在这
+func (c *Configs) RegisterServices() {
+	c.RegisterService(GetDefaultRouter())
+	c.RegisterService(GetConnection())
 }
 
 // LoadConfigs 批量配置所有
@@ -60,6 +78,11 @@ func (c *Configs) ShutdownAll() {
 // RegisterService 注册配置
 func (c *Configs) RegisterService(service Service) {
 	c.services = append(c.services, service)
+}
+
+// LogBanner 打印banner
+func (c *Configs) LogBanner() {
+	log.Info(banner)
 }
 
 // GetConfigs 注册所有配置

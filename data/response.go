@@ -58,6 +58,17 @@ func NewResultListResponse(data interface{}) *ResultListResponse {
 	}
 }
 
+// NewResultResponse 结果返回
+func NewResultResponse(data interface{}) *ResultResponse {
+	return &ResultResponse{
+		GenericResponse: GenericResponse{
+			Successed: true,
+			Code:      http.StatusOK,
+		},
+		Result: data,
+	}
+}
+
 // GithubUserResponse github返回
 type GithubUserResponse struct {
 	Login     string //登录名

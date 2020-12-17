@@ -18,9 +18,6 @@ func init() {
 	validate = validator.New()
 }
 
-type userStructKey struct{}
-type categoryStructKey struct{}
-
 // MiddlewareRequireAuthorization 必须要授权中间件
 func MiddlewareRequireAuthorization(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
@@ -40,7 +37,7 @@ func MiddlewareRequireAuthorization(next http.Handler) http.Handler {
 			return
 		}
 		// 创建context 将user结构体传给之后需要用的handler
-		ctx := context.WithValue(req.Context(), userStructKey{}, user)
+		ctx := context.WithValue(req.Context(), UserHandler{}, user)
 		// 赋值新的request
 		req = req.WithContext(ctx)
 		next.ServeHTTP(rw, req)
@@ -59,7 +56,7 @@ func MiddlewareRequireAdminPermission(next http.Handler) http.Handler {
 func MiddlewareUserValidation(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		var user data.User
-		if canDeserialize(rw, req, &user) && validateStruct(rw, req, &user) {
+		if deserializeStruct(rw, req, &user) && validateStruct(rw, req, &user) {
 			next.ServeHTTP(rw, req)
 		}
 	})
@@ -69,9 +66,9 @@ func MiddlewareUserValidation(next http.Handler) http.Handler {
 func MiddlewareCategoryValidation(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		var category data.Category
-		if canDeserialize(rw, req, &category) && validateStruct(rw, req, &category) {
+		if deserializeStruct(rw, req, &category) && validateStruct(rw, req, &category) {
 			// 创建context 将user结构体传给之后需要用的handler
-			ctx := context.WithValue(req.Context(), categoryHandler{}, &category)
+			ctx := context.WithValue(req.Context(), CategoryHandler{}, &category)
 			// 赋值新的request
 			req = req.WithContext(ctx)
 			next.ServeHTTP(rw, req)
@@ -79,7 +76,7 @@ func MiddlewareCategoryValidation(next http.Handler) http.Handler {
 	})
 }
 
-// 校验参数是否正确 不正确的话返回校验错误的json数据 和 错误 正确的话error为nil
+// 校验参数是否正确 不正确的话向response写入校验信息
 func validateStruct(rw http.ResponseWriter, req *http.Request, s interface{}) bool {
 	// returns nil or ValidationErrors ( []FieldError )
 	err := validate.Struct(s)
@@ -113,7 +110,7 @@ func validateStruct(rw http.ResponseWriter, req *http.Request, s interface{}) bo
 }
 
 // true: 反序列化成功 false:反序列化失败 并且回写response
-func canDeserialize(rw http.ResponseWriter, req *http.Request, s interface{}) bool {
+func deserializeStruct(rw http.ResponseWriter, req *http.Request, s interface{}) bool {
 	err := data.FromJSON(s, req.Body)
 	// 反序列化
 	if err != nil {

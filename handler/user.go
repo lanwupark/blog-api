@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"sync"
 
 	"github.com/gorilla/mux"
 	"github.com/lanwupark/blog-api/config"
@@ -11,25 +10,20 @@ import (
 )
 
 var (
-	userdao     = dao.GetUserDaoInstance()
-	userOnce    sync.Once
-	userHanlder *userHandler
+	userdao = dao.NewUserDao()
 )
 
-// userHandler 处理用户表的接口
-type userHandler struct {
+// UserHandler 处理用户表的接口
+type UserHandler struct {
 }
 
-// GetUserHandlerInstance 新建
-func GetUserHandlerInstance() *userHandler {
-	userOnce.Do(func() {
-		userHanlder = &userHandler{}
-	})
-	return userHanlder
+// NewUserHandler 新建
+func NewUserHandler() *UserHandler {
+	return &UserHandler{}
 }
 
 // GetRoutes 获取该handler下所有路由
-func (u *userHandler) GetRoutes() []*config.Route {
+func (u *UserHandler) GetRoutes() []*config.Route {
 	usersRoute := &config.Route{
 		Method:          http.MethodGet,
 		Path:            "/users",
@@ -46,14 +40,14 @@ func (u *userHandler) GetRoutes() []*config.Route {
 }
 
 // GetUsers 获取用户
-func (userHandler) GetUsers(rw http.ResponseWriter, req *http.Request) {
+func (UserHandler) GetUsers(rw http.ResponseWriter, req *http.Request) {
 	users := userdao.SelectAll()
 	resp := data.NewResultListResponse(users)
 	data.ToJSON(resp, rw)
 }
 
 // GetUser 获取用户
-func (userHandler) GetUser(rw http.ResponseWriter, req *http.Request) {
-	user := req.Context().Value(userStructKey{}).(*data.User)
+func (UserHandler) GetUser(rw http.ResponseWriter, req *http.Request) {
+	user := req.Context().Value(UserHandler{}).(*data.User)
 	data.ToJSON(user, rw)
 }

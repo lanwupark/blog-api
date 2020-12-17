@@ -2,34 +2,38 @@ package handler
 
 import (
 	"net/http"
-	"sync"
 
 	"github.com/gorilla/mux"
 	"github.com/lanwupark/blog-api/config"
+	"github.com/lanwupark/blog-api/dao"
 	"github.com/lanwupark/blog-api/data"
 )
 
 var (
-	categoryOnce    sync.Once
-	categoryhandler *categoryHandler
+	categorydao = dao.NewCategoryDao()
 )
 
-type categoryHandler struct{}
+// CategoryHandler category hanlder
+type CategoryHandler struct{}
 
-// GetCategoryHandlerInstance 新建
-func GetCategoryHandlerInstance() *categoryHandler {
-	categoryOnce.Do(func() {
-		categoryhandler = &categoryHandler{}
-	})
-	return categoryhandler
+// NewCategoryHandler 新建
+func NewCategoryHandler() *CategoryHandler {
+	return &CategoryHandler{}
 }
 
-func (categoryHandler) AddCategory(rw http.ResponseWriter, req *http.Request) {
-	catogory := req.Context().Value(categoryHandler{}).(*data.Category)
-	data.ToJSON(catogory, rw)
+// AddCategory 添加分类
+func (CategoryHandler) AddCategory(rw http.ResponseWriter, req *http.Request) {
+	catogory := req.Context().Value(CategoryHandler{}).(*data.Category)
+	id, err := categorydao.InsertOneToMongo(catogory)
+	if err != nil {
+		rw.WriteHeader(http.StatusInternalServerError)
+		data.ToJSON(data.NewFailedResponse(err.Error(), http.StatusInternalServerError), rw)
+	}
+	data.ToJSON(data.NewResultResponse(id), rw)
 }
 
-func (c *categoryHandler) GetRoutes() []*config.Route {
+// GetRoutes 实现接口
+func (c *CategoryHandler) GetRoutes() []*config.Route {
 	route := &config.Route{
 		Method:          http.MethodPost,
 		Path:            "/category",
