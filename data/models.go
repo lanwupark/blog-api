@@ -6,11 +6,12 @@ import (
 
 // User 用户
 type User struct {
-	UserID    uint       `json:"UserId" db:"user_id" validate:"required"`
-	UserLogin string     `json:"Login" db:"user_login" validate:"required"`
-	IsAdmin   bool       `json:"IsAdmin" db:"is_admin"`
-	CreateAt  *time.Time `json:"-" db:"create_at"`
-	UpdateAt  *time.Time `json:"-" db:"update_at"`
+	UserID    uint   `db:"user_id" validate:"required"`
+	UserLogin string `db:"user_login" validate:"required"`
+	IsAdmin   bool   `json:"IsAdmin" db:"is_admin"`
+	Status    string
+	CreateAt  time.Time `db:"create_at"`
+	UpdateAt  time.Time `db:"update_at"`
 }
 
 // Category 文章分类

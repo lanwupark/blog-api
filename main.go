@@ -25,6 +25,7 @@ func init() {
 
 func main() {
 	flag.Parse()                  // 解析参数
+	log.SetLevel(log.DebugLevel)  //设置日志级别
 	registerHTTPRequestHanlders() //先向路由服务注册路由
 	c.RegisterServices()          // 注册所有服务配置
 	c.LoadConfigs()               // 加载所有服务配置

@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"github.com/apex/log"
 	"github.com/lanwupark/blog-api/data"
 )
 
@@ -15,7 +16,12 @@ func NewUserDao() *UserDao {
 // SelectAll 查询所有
 func (UserDao) SelectAll() []*data.User {
 	db := conn.DB
-	var users []*data.User
-	db.Select(&users, "SELECT * FROM users")
+	// 别使用纯声明的方式 这样切片为nil
+	users := []*data.User{}
+	err := db.Select(&users, "SELECT * FROM users")
+	if err != nil {
+		panic(err)
+	}
+	log.Infof("%v", users)
 	return users
 }

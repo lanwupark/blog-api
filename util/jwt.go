@@ -1,10 +1,11 @@
-package handler
+package util
 
 // jwt 包 当用户通过github授权后 生成token用
 import (
 	"fmt"
 	"time"
 
+	"github.com/apex/log"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/lanwupark/blog-api/data"
 )
@@ -34,6 +35,19 @@ func CreateToken(user *data.User) (tokenString string, err error) {
 
 // ParseToken 解析json数据
 func ParseToken(tokenString string) (user *data.User, err error) {
+	mapClaims, err := parseToken(tokenString)
+	if err != nil {
+		return nil, err
+	}
+	err = data.FromJSONString(mapClaims["sub"].(string), &user)
+	if err != nil {
+		return nil, err
+	}
+	return
+}
+
+// parseToken 获取负荷
+func parseToken(tokenString string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -47,11 +61,34 @@ func ParseToken(tokenString string) (user *data.User, err error) {
 		return nil, err
 	}
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		err = data.FromJSONString(claims["sub"].(string), &user)
-		if err != nil {
-			return nil, err
-		}
-		return
+		return claims, nil
 	}
 	return nil, err
+}
+
+// RefreshToken 刷新token 如果过期时间小于expiredTime*0.2 那么就刷新Token
+func RefreshToken(tokenString string) (newToken string, success bool) {
+	success = false
+	claims, err := parseToken(tokenString)
+	if err != nil {
+		return
+	}
+	// 当前时间戳
+	now := time.Now().Unix()
+	created, expired := int64(claims["nbf"].(float64)), int64(claims["exp"].(float64))
+	// 小小计算
+	if (expired - now) <= (expired-created)*2/10 {
+		var user data.User
+		err = data.FromJSONString(claims["sub"].(string), &user)
+		if err != nil {
+			return
+		}
+		newToken, err = CreateToken(&user)
+		if err != nil {
+			return
+		}
+		log.Infof("refresh token %+v\t token:\n", user.UserID, newToken)
+		success = true
+	}
+	return
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/apex/log"
 	"github.com/go-playground/validator/v10"
 	"github.com/lanwupark/blog-api/data"
+	"github.com/lanwupark/blog-api/util"
 )
 
 var (
@@ -29,7 +30,7 @@ func MiddlewareRequireAuthorization(next http.Handler) http.Handler {
 			data.ToJSON(data.NewFailedResponse("Authorization Header Not Found", http.StatusUnauthorized), rw)
 			return
 		}
-		user, err := ParseToken(token[0])
+		user, err := util.ParseToken(token[0])
 		if err != nil {
 			// token 解析失败
 			rw.WriteHeader(http.StatusUnauthorized)

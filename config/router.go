@@ -14,6 +14,7 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/lanwupark/blog-api/data"
+	"github.com/lanwupark/blog-api/util"
 )
 
 var (
@@ -21,6 +22,12 @@ var (
 	routes     = []*Route{} // 初始化子路由
 	server     *http.Server
 	routerOnce sync.Once
+	// 默认的中间件
+	defaultMiddlewares = []mux.MiddlewareFunc{
+		rewriteAuthorizationMiddleware,
+		recoveryMiddleware,
+		contentTypeJSONMiddleware,
+	}
 )
 
 // Router 小小路由封装
@@ -91,13 +98,16 @@ func (r *Router) Shutdown() {
 
 // 配置所有路由
 func (r *Router) configAllRoute() {
+	log.Debug("add all default middlewares fro all route in config/router.go file")
 	router := r.router
 	for _, handler := range r.handlers {
 		for _, route := range handler.GetRoutes() {
 			r := router.Methods(route.Method).Subrouter()
-			// 添加默认的两个中间件
-			middlewares := []mux.MiddlewareFunc{recoveryMiddleware, contentTypeJSONMiddleware}
+			// 添加默认的中间件
+			middlewares := make([]mux.MiddlewareFunc, len(defaultMiddlewares))
+			copy(middlewares, defaultMiddlewares)
 			middlewares = append(middlewares, route.MiddlewareFuncs...)
+			log.Infof("route path: %s method: %s", route.Path, route.Method)
 			// 使用中间件
 			r.Use(middlewares...)
 			// 映射处理函数
@@ -143,6 +153,20 @@ func recoveryMiddleware(next http.Handler) http.Handler {
 func contentTypeJSONMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		rw.Header().Add("Content-Type", "application/json")
+		next.ServeHTTP(rw, req)
+	})
+}
+
+// 检测Token是否快过期 如果快过期了就重新发送Authorization
+func rewriteAuthorizationMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		token, ok := req.Header["Authorization"]
+		if ok {
+			newToken, success := util.RefreshToken(token[0])
+			if success {
+				rw.Header().Add("Set-Token", newToken)
+			}
+		}
 		next.ServeHTTP(rw, req)
 	})
 }
