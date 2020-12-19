@@ -1,6 +1,9 @@
 package data
 
-import "net/http"
+import (
+	"net/http"
+	"time"
+)
 
 // 一些回复的结构体
 
@@ -92,4 +95,25 @@ type UserResponse struct {
 	Email     string
 	Localtion string
 	Name      string
+}
+
+// ArticleResponse TreeView结构的Article
+type ArticleResponse struct {
+	ArticleID uint64
+	UserID    uint
+	Title     string
+	Content   string
+	Comments  []*CommentResponse
+	Status    string
+	CreateAt  time.Time
+}
+
+// CommentResponse TreeView结构的Comment
+type CommentResponse struct {
+	CommentID uint64
+	UserID    uint
+	Content   string
+	Status    string
+	Replies   []*CommentResponse
+	CreateAt  time.Time
 }

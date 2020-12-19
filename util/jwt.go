@@ -18,7 +18,7 @@ var (
 // CreateToken 创建token
 func CreateToken(user *data.User) (tokenString string, err error) {
 	var subject string
-	subject, err = data.ToJSONString(user)
+	subject, err = ToJSONString(user)
 	if err != nil {
 		return "", err
 	}
@@ -39,7 +39,7 @@ func ParseToken(tokenString string) (user *data.User, err error) {
 	if err != nil {
 		return nil, err
 	}
-	err = data.FromJSONString(mapClaims["sub"].(string), &user)
+	err = FromJSONString(mapClaims["sub"].(string), &user)
 	if err != nil {
 		return nil, err
 	}
@@ -77,9 +77,11 @@ func RefreshToken(tokenString string) (newToken string, success bool) {
 	now := time.Now().Unix()
 	created, expired := int64(claims["nbf"].(float64)), int64(claims["exp"].(float64))
 	// 小小计算
-	if (expired - now) <= (expired-created)*2/10 {
+	lastSeconds := expired - now
+	// 剩余过期时间 in [0,20%] 重新刷新Token
+	if lastSeconds > 0 && lastSeconds <= (expired-created)*2/10 {
 		var user data.User
-		err = data.FromJSONString(claims["sub"].(string), &user)
+		err = FromJSONString(claims["sub"].(string), &user)
 		if err != nil {
 			return
 		}

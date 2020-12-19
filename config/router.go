@@ -140,7 +140,7 @@ func recoveryMiddleware(next http.Handler) http.Handler {
 				msg := fmt.Sprintf("%s", err)
 				log.Errorf("internal server error: %s", msg)
 				resp := data.NewFailedResponse(msg, http.StatusInternalServerError)
-				data.ToJSON(resp, rw)
+				util.ToJSON(resp, rw)
 				// 打印堆栈信息
 				debug.PrintStack()
 			}
@@ -152,7 +152,7 @@ func recoveryMiddleware(next http.Handler) http.Handler {
 // contentTypeJSONMiddleware 返回头里面有 Content-type
 func contentTypeJSONMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		rw.Header().Add("Content-Type", "application/json")
+		rw.Header().Add("Content-Type", "application/json; charset=utf-8")
 		next.ServeHTTP(rw, req)
 	})
 }

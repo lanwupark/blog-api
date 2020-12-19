@@ -7,6 +7,7 @@ import (
 	"github.com/lanwupark/blog-api/config"
 	"github.com/lanwupark/blog-api/dao"
 	"github.com/lanwupark/blog-api/data"
+	"github.com/lanwupark/blog-api/util"
 )
 
 var (
@@ -27,9 +28,9 @@ func (CategoryHandler) AddCategory(rw http.ResponseWriter, req *http.Request) {
 	id, err := categorydao.InsertOneToMongo(catogory)
 	if err != nil {
 		rw.WriteHeader(http.StatusInternalServerError)
-		data.ToJSON(data.NewFailedResponse(err.Error(), http.StatusInternalServerError), rw)
+		util.ToJSON(data.NewFailedResponse(err.Error(), http.StatusInternalServerError), rw)
 	}
-	data.ToJSON(data.NewResultResponse(id), rw)
+	util.ToJSON(data.NewResultResponse(id), rw)
 }
 
 // GetRoutes 实现接口

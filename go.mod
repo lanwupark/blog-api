@@ -11,6 +11,7 @@ require (
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/jmoiron/sqlx v1.2.0
+	github.com/sony/sonyflake v1.0.0
 	github.com/stretchr/testify v1.6.1
 	go.mongodb.org/mongo-driver v1.4.4
 )

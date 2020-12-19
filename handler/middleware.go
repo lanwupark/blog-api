@@ -27,14 +27,14 @@ func MiddlewareRequireAuthorization(next http.Handler) http.Handler {
 		if !ok {
 			// 没有请求头
 			rw.WriteHeader(http.StatusUnauthorized)
-			data.ToJSON(data.NewFailedResponse("Authorization Header Not Found", http.StatusUnauthorized), rw)
+			util.ToJSON(data.NewFailedResponse("Authorization Header Not Found", http.StatusUnauthorized), rw)
 			return
 		}
 		user, err := util.ParseToken(token[0])
 		if err != nil {
 			// token 解析失败
 			rw.WriteHeader(http.StatusUnauthorized)
-			data.ToJSON(data.NewFailedResponse("unauthorization", http.StatusUnauthorized), rw)
+			util.ToJSON(data.NewFailedResponse("unauthorization", http.StatusUnauthorized), rw)
 			return
 		}
 		// 创建context 将user结构体传给之后需要用的handler
@@ -87,8 +87,8 @@ func validateStruct(rw http.ResponseWriter, req *http.Request, s interface{}) bo
 		// an invalid value for validation such as interface with nil
 		// value most including myself do not usually have code like this.
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			json, _ := data.ToJSONString(err)
-			data.ToJSON(data.NewFailedResponse(json, http.StatusBadRequest), rw)
+			json, _ := util.ToJSONString(err)
+			util.ToJSON(data.NewFailedResponse(json, http.StatusBadRequest), rw)
 			return false
 		}
 		errors := []string{}
@@ -101,8 +101,8 @@ func validateStruct(rw http.ResponseWriter, req *http.Request, s interface{}) bo
 			)
 			errors = append(errors, errMsg)
 		}
-		msg, _ := data.ToJSONString(errors)
-		data.ToJSON(data.NewFailedResponse(msg, http.StatusBadRequest), rw)
+		msg, _ := util.ToJSONString(errors)
+		util.ToJSON(data.NewFailedResponse(msg, http.StatusBadRequest), rw)
 		// from here you can create your own error messages in whatever language you wish
 		return false
 	}
@@ -112,13 +112,13 @@ func validateStruct(rw http.ResponseWriter, req *http.Request, s interface{}) bo
 
 // true: 反序列化成功 false:反序列化失败 并且回写response
 func deserializeStruct(rw http.ResponseWriter, req *http.Request, s interface{}) bool {
-	err := data.FromJSON(s, req.Body)
+	err := util.FromJSON(s, req.Body)
 	// 反序列化
 	if err != nil {
 		msg := fmt.Sprintf("deserialize %T struct error:%s", s, err)
 		log.Warnf(msg)
 		rw.WriteHeader(http.StatusBadRequest)
-		data.ToJSON(data.NewFailedResponse(msg, http.StatusBadRequest), rw)
+		util.ToJSON(data.NewFailedResponse(msg, http.StatusBadRequest), rw)
 		return false
 	}
 	return true

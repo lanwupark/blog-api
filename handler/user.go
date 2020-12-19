@@ -7,6 +7,7 @@ import (
 	"github.com/lanwupark/blog-api/config"
 	"github.com/lanwupark/blog-api/dao"
 	"github.com/lanwupark/blog-api/data"
+	"github.com/lanwupark/blog-api/util"
 )
 
 var (
@@ -43,11 +44,11 @@ func (u *UserHandler) GetRoutes() []*config.Route {
 func (UserHandler) GetUsers(rw http.ResponseWriter, req *http.Request) {
 	users := userdao.SelectAll()
 	resp := data.NewResultListResponse(users)
-	data.ToJSON(resp, rw)
+	util.ToJSON(resp, rw)
 }
 
 // GetUser 获取用户
 func (UserHandler) GetUser(rw http.ResponseWriter, req *http.Request) {
 	user := req.Context().Value(UserHandler{}).(*data.User)
-	data.ToJSON(user, rw)
+	util.ToJSON(user, rw)
 }
