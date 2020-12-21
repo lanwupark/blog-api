@@ -10,7 +10,7 @@ import (
 
 func TestJWTSuccess(t *testing.T) {
 	assert := assert.New(t)
-	user := &data.User{
+	user := &data.TokenClaimsSubject{
 		UserID:    123456,
 		UserLogin: "eanson023",
 		IsAdmin:   true,

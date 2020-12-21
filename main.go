@@ -19,8 +19,8 @@ func init() {
 	flag.StringVar(&c.BindAdreess, "address", ":8080", "server address")
 	flag.StringVar(&c.MongoURL, "mongo-url", "mongodb://localhost:27017", "the mongo db connection string")
 	flag.StringVar(&c.MongoDatabase, "mongo-db", "blog", "the default mongodb database")
-	flag.StringVar(&c.OAuthClientID, "oauth-id", "", "github oauth client id")
-	flag.StringVar(&c.OAuthClientID, "oauth-secret", "", "github oauth client secret")
+	flag.StringVar(&c.OAuthClientID, "oauth-id", "0fbcd40d4a1e12920596", "github oauth client id")
+	flag.StringVar(&c.OAuthClientSecret, "oauth-secret", "e449dfcd57e98903e50a4ee5208475ee0009c39a", "github oauth client secret")
 }
 
 func main() {

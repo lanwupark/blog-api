@@ -16,9 +16,9 @@ var (
 )
 
 // CreateToken 创建token
-func CreateToken(user *data.User) (tokenString string, err error) {
-	var subject string
-	subject, err = ToJSONString(user)
+func CreateToken(subject *data.TokenClaimsSubject) (tokenString string, err error) {
+	var sub string
+	sub, err = ToJSONString(subject)
 	if err != nil {
 		return "", err
 	}
@@ -26,7 +26,7 @@ func CreateToken(user *data.User) (tokenString string, err error) {
 		Issuer:    "eanson",                                  //签发人 我写我自己^_^
 		NotBefore: time.Now().Unix(),                         //生效时间
 		ExpiresAt: int64(time.Now().Add(expiredTime).Unix()), // 过期时间
-		Subject:   subject,                                   //主体 json数据
+		Subject:   sub,                                       //主体 json数据
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err = token.SignedString(secretKey)
@@ -34,12 +34,12 @@ func CreateToken(user *data.User) (tokenString string, err error) {
 }
 
 // ParseToken 解析json数据
-func ParseToken(tokenString string) (user *data.User, err error) {
+func ParseToken(tokenString string) (subject *data.TokenClaimsSubject, err error) {
 	mapClaims, err := parseToken(tokenString)
 	if err != nil {
 		return nil, err
 	}
-	err = FromJSONString(mapClaims["sub"].(string), &user)
+	err = FromJSONString(mapClaims["sub"].(string), &subject)
 	if err != nil {
 		return nil, err
 	}
@@ -80,16 +80,16 @@ func RefreshToken(tokenString string) (newToken string, success bool) {
 	lastSeconds := expired - now
 	// 剩余过期时间 in [0,20%] 重新刷新Token
 	if lastSeconds > 0 && lastSeconds <= (expired-created)*2/10 {
-		var user data.User
-		err = FromJSONString(claims["sub"].(string), &user)
+		var subject data.TokenClaimsSubject
+		err = FromJSONString(claims["sub"].(string), &subject)
 		if err != nil {
 			return
 		}
-		newToken, err = CreateToken(&user)
+		newToken, err = CreateToken(&subject)
 		if err != nil {
 			return
 		}
-		log.Infof("refresh token %+v\t token:\n", user.UserID, newToken)
+		log.Infof("refresh token %+v\t token:\n", subject.UserID, newToken)
 		success = true
 	}
 	return

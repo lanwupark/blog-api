@@ -24,8 +24,8 @@ var (
 	routerOnce sync.Once
 	// 默认的中间件
 	defaultMiddlewares = []mux.MiddlewareFunc{
-		rewriteAuthorizationMiddleware,
 		recoveryMiddleware,
+		rewriteAuthorizationMiddleware,
 		contentTypeJSONMiddleware,
 	}
 )
@@ -73,8 +73,8 @@ func (r *Router) Config(configs *Configs) {
 		Addr:         configs.BindAdreess,
 		Handler:      corsHanlder(httplog.New(router)), //跨域访问+ httplog中间件
 		IdleTimeout:  120 * time.Second,
-		ReadTimeout:  1 * time.Second,
-		WriteTimeout: 1 * time.Second,
+		ReadTimeout:  60 * time.Second, //不要设小了 免得debug找半天
+		WriteTimeout: 60 * time.Second,
 	}
 
 	r.router = router
@@ -152,8 +152,11 @@ func recoveryMiddleware(next http.Handler) http.Handler {
 // contentTypeJSONMiddleware 返回头里面有 Content-type
 func contentTypeJSONMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		rw.Header().Add("Content-Type", "application/json; charset=utf-8")
 		next.ServeHTTP(rw, req)
+		_, hdCT := rw.Header()["Content-Type"]
+		if !hdCT {
+			rw.Header().Set("Content-Type", "application/json; charset=utf-8")
+		}
 	})
 }
 

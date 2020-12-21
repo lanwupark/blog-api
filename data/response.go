@@ -7,6 +7,14 @@ import (
 
 // 一些回复的结构体
 
+// TokenClaimsSubject token负荷 主体
+type TokenClaimsSubject struct {
+	UserID      uint64
+	UserLogin   string
+	IsAdmin     bool
+	GithubToken string
+}
+
 // GenericResponse 通用返回题
 type GenericResponse struct {
 	Successed bool   // 是否成功
@@ -75,7 +83,7 @@ func NewResultResponse(data interface{}) *ResultResponse {
 // GithubUserResponse github返回
 type GithubUserResponse struct {
 	Login     string //登录名
-	ID        string `json:"id"`         //用户独有ID
+	ID        uint64 `json:"id"`         //用户独有ID
 	NodeID    string `json:"node_id"`    //
 	AvatarURL string `json:"avatar_url"` //头像url
 	URL       string `json:"url"`        //用户数据url
@@ -116,4 +124,14 @@ type CommentResponse struct {
 	Status    string
 	Replies   []*CommentResponse
 	CreateAt  time.Time
+}
+
+// GithubTokenResponse 请求github token的返回json数据
+type GithubTokenResponse struct {
+	Error            string
+	ErrorDescription string `json:"error_description"`
+	ErrorURI         string `json:"error_uri"`
+	AccessToken      string `json:"access_token"`
+	TokenType        string `json:"token_type"`
+	Scope            string `json:"_,omitempty"`
 }
