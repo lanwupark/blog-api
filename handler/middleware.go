@@ -7,16 +7,19 @@ import (
 
 	"github.com/apex/log"
 	"github.com/go-playground/validator/v10"
+	"github.com/lanwupark/blog-api/config"
 	"github.com/lanwupark/blog-api/data"
 	"github.com/lanwupark/blog-api/util"
 )
 
 var (
 	validate *validator.Validate
+	router   *config.Router
 )
 
 func init() {
 	validate = validator.New()
+	router = config.GetDefaultRouter()
 }
 
 // MiddlewareRequireAuthorization 必须要授权中间件
@@ -57,9 +60,7 @@ func MiddlewareRequireAdminPermission(next http.Handler) http.Handler {
 func MiddlewareUserValidation(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		var user data.User
-		if deserializeStruct(rw, req, &user) && validateStruct(rw, req, &user) {
-			next.ServeHTTP(rw, req)
-		}
+		validateThen(next, rw, req, nil, &user)
 	})
 }
 
@@ -67,13 +68,15 @@ func MiddlewareUserValidation(next http.Handler) http.Handler {
 func MiddlewareCategoryValidation(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		var category data.Category
-		if deserializeStruct(rw, req, &category) && validateStruct(rw, req, &category) {
-			// 创建context 将user结构体传给之后需要用的handler
-			ctx := context.WithValue(req.Context(), CategoryHandler{}, &category)
-			// 赋值新的request
-			req = req.WithContext(ctx)
-			next.ServeHTTP(rw, req)
-		}
+		validateThen(next, rw, req, CategoryHandler{}, &category)
+	})
+}
+
+// MiddlewareAddArticleValidation 校验分类中间件
+func MiddlewareAddArticleValidation(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		var article data.AddArticleRequest
+		validateThen(next, rw, req, ArticleHandler{}, &article)
 	})
 }
 
@@ -110,8 +113,8 @@ func validateStruct(rw http.ResponseWriter, req *http.Request, s interface{}) bo
 	return true
 }
 
-// true: 反序列化成功 false:反序列化失败 并且回写response
-func deserializeStruct(rw http.ResponseWriter, req *http.Request, s interface{}) bool {
+// DeserializeStruct 反序列化结构 true: 反序列化成功 false:反序列化失败 并且回写response
+func DeserializeStruct(rw http.ResponseWriter, req *http.Request, s interface{}) bool {
 	err := util.FromJSON(s, req.Body)
 	// 反序列化
 	if err != nil {
@@ -122,4 +125,17 @@ func deserializeStruct(rw http.ResponseWriter, req *http.Request, s interface{})
 		return false
 	}
 	return true
+}
+
+// 重复代码抽取 key为空时 不传值
+func validateThen(next http.Handler, rw http.ResponseWriter, req *http.Request, key interface{}, s interface{}) {
+	if DeserializeStruct(rw, req, s) && validateStruct(rw, req, s) {
+		if key != nil {
+			// 创建context 将user结构体传给之后需要用的handler
+			ctx := context.WithValue(req.Context(), key, s)
+			// 赋值新的request
+			req = req.WithContext(ctx)
+		}
+		next.ServeHTTP(rw, req)
+	}
 }

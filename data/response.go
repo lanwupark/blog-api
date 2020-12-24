@@ -112,7 +112,7 @@ type ArticleResponse struct {
 	Title     string
 	Content   string
 	Comments  []*CommentResponse
-	Status    string
+	Status    CommonType
 	CreateAt  time.Time
 }
 
@@ -121,7 +121,7 @@ type CommentResponse struct {
 	CommentID uint64
 	UserID    uint
 	Content   string
-	Status    string
+	Status    CommonType
 	Replies   []*CommentResponse
 	CreateAt  time.Time
 }

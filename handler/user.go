@@ -25,30 +25,17 @@ func NewUserHandler() *UserHandler {
 
 // GetRoutes 获取该handler下所有路由
 func (u *UserHandler) GetRoutes() []*config.Route {
-	usersRoute := &config.Route{
-		Method:          http.MethodGet,
-		Path:            "/users",
-		Handler:         u.GetUsers,
-		MiddlewareFuncs: []mux.MiddlewareFunc{},
-	}
 	userRoute := &config.Route{
 		Method:          http.MethodGet,
 		Path:            "/user",
-		Handler:         u.GetUser,
+		Handler:         u.GetUserSelf,
 		MiddlewareFuncs: []mux.MiddlewareFunc{MiddlewareRequireAuthorization},
 	}
-	return []*config.Route{usersRoute, userRoute}
+	return []*config.Route{userRoute}
 }
 
-// GetUsers 获取用户
-func (UserHandler) GetUsers(rw http.ResponseWriter, req *http.Request) {
-	users := userdao.SelectAll()
-	resp := data.NewResultListResponse(users)
-	util.ToJSON(resp, rw)
-}
-
-// GetUser 获取用户
-func (UserHandler) GetUser(rw http.ResponseWriter, req *http.Request) {
-	user := req.Context().Value(UserHandler{}).(*data.User)
+// GetUserSelf 获取用户自身信息
+func (UserHandler) GetUserSelf(rw http.ResponseWriter, req *http.Request) {
+	user := req.Context().Value(UserHandler{}).(*data.TokenClaimsSubject)
 	util.ToJSON(user, rw)
 }
