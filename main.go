@@ -43,6 +43,7 @@ func registerHTTPRequestHanlders() {
 	router.AddHTTPRequestHanlder(handler.NewOAuthHandler())
 	router.AddHTTPRequestHanlder(handler.NewCategoryHandler())
 	router.AddHTTPRequestHanlder(handler.NewArticleHandler())
+	router.AddHTTPRequestHanlder(handler.NewCommonHandler())
 }
 
 // hookFunc 用于平滑退出程序

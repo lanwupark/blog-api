@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/apex/log"
 	"github.com/go-playground/validator/v10"
+	"github.com/gorilla/mux"
 	"github.com/lanwupark/blog-api/config"
 	"github.com/lanwupark/blog-api/data"
 	"github.com/lanwupark/blog-api/util"
@@ -35,6 +37,7 @@ func MiddlewareRequireAuthorization(next http.Handler) http.Handler {
 		}
 		user, err := util.ParseToken(token[0])
 		if err != nil {
+			log.WithError(err).Error("parse token failed")
 			// token 解析失败
 			rw.WriteHeader(http.StatusUnauthorized)
 			util.ToJSON(data.NewFailedResponse("unauthorization", http.StatusUnauthorized), rw)
@@ -78,6 +81,66 @@ func MiddlewareAddArticleValidation(next http.Handler) http.Handler {
 		var article data.AddArticleRequest
 		validateThen(next, rw, req, ArticleHandler{}, &article)
 	})
+}
+
+// MiddlewareCheckArticleIDValidation 检测文章ID中间件
+func MiddlewareCheckArticleIDValidation(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		key := "article_id"
+		idStr, ok := mux.Vars(req)[key]
+		if !ok {
+			RespondBadRequest(rw, fmt.Sprintf("uri error: %s can't be null", key))
+			return
+		}
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			RespondBadRequest(rw, fmt.Sprintf("uri error: %s format error", key))
+			return
+		}
+		// 传输
+		ctx := context.WithValue(req.Context(), ArticleIDContextKey{}, uint64(id))
+		req = req.WithContext(ctx)
+		next.ServeHTTP(rw, req)
+	})
+}
+
+// MiddlewareEditArticleValidation 校验编辑文章中间件
+func MiddlewareEditArticleValidation(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		var article data.AddArticleRequest
+		validateThen(next, rw, req, ArticleHandler{}, &article)
+	})
+}
+
+// MiddlewareAddCommentValidation 校验添加评论中间件
+func MiddlewareAddCommentValidation(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		var comment data.AddCommentRequest
+		validateThen(next, rw, req, CommentContextKey{}, &comment)
+	})
+}
+
+// MiddlewareLikeArticleValidation 检验
+func MiddlewareLikeArticleValidation(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		var likeRequest data.LikeArticleRequest
+		validateThen(next, rw, req, LikeArticleContextKey{}, &likeRequest)
+	})
+}
+
+// checkID 检查路径上的id
+func checkID(rw http.ResponseWriter, req *http.Request, key string) (uint64, bool) {
+	idStr, ok := mux.Vars(req)[key]
+	if !ok {
+		RespondBadRequest(rw, fmt.Sprintf("uri error: %s can't be null", key))
+		return 0, false
+	}
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		RespondBadRequest(rw, fmt.Sprintf("uri error: %s format error", key))
+		return 0, false
+	}
+	return uint64(id), true
 }
 
 // 校验参数是否正确 不正确的话向response写入校验信息

@@ -20,7 +20,7 @@ var (
 type Connection struct {
 	DB          *sqlx.DB        // sqlx DB
 	mongoClient *mongo.Client   // mongo Client
-	Mongo       *mongo.Database // mongo DB
+	MongoDB     *mongo.Database // mongo DB
 }
 
 // Config 实现配置接口
@@ -47,7 +47,7 @@ func (c *Connection) Config(configs *Configs) {
 	log.Info("Connected to MongoDB!")
 	// 赋值
 	c.mongoClient = client
-	c.Mongo = client.Database(configs.MongoDatabase)
+	c.MongoDB = client.Database(configs.MongoDatabase)
 }
 
 // Shutdown 结束
@@ -67,4 +67,32 @@ func (c *Connection) Shutdown() {
 // GetConnection 获取连接
 func GetConnection() *Connection {
 	return conn
+}
+
+// MustBeginMongoTransaction 开启mongo事务
+func (c *Connection) MustBeginMongoTransaction() mongo.Session {
+	session, err := c.mongoClient.StartSession()
+	if err != nil {
+		panic(err)
+	}
+	if err = session.StartTransaction(); err != nil {
+		panic(err)
+	}
+	return session
+}
+
+func (c *Connection) StartMongoSession() mongo.Session {
+	session, err := c.mongoClient.StartSession()
+	if err != nil {
+		panic(err)
+	}
+	return session
+}
+
+// MustBeginBothTransaction 同时开启sql 和mongo事务
+func (c *Connection) MustBeginBothTransaction() (*sqlx.Tx, mongo.Session) {
+	log.Info("starting both transaction")
+	sqltx := c.DB.MustBegin()
+	session := c.MustBeginMongoTransaction()
+	return sqltx, session
 }

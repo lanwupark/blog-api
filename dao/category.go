@@ -13,7 +13,7 @@ func NewCategoryDao() *CategoryDao {
 }
 
 func (CategoryDao) InsertOneToMongo(category *data.Category) (id interface{}, err error) {
-	mongodb := conn.Mongo
+	mongodb := conn.MongoDB
 	coll := mongodb.Collection("categories")
 	res, err := coll.InsertOne(context.TODO(), category)
 	if err != nil {

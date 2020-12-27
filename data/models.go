@@ -2,7 +2,16 @@ package data
 
 import (
 	"database/sql"
+	"errors"
+	"reflect"
 	"time"
+)
+
+const (
+	// MongoCollectionArticle 集合
+	MongoCollectionArticle = "article"
+	// MongoCollectionAlbum 集合
+	MongoCollectionAlbum = "album"
 )
 
 // LikeType 喜欢的类型
@@ -163,4 +172,41 @@ func (article *Article) TreeView() *ArticleResponse {
 	// 回复map中 键与文章的id相等的切片就是最大的子评论
 	res.Comments = replyToMap[res.ArticleID]
 	return res
+}
+
+// DuplicateStructField 复制结构体字段:复制约束 两个名称相同,类型相同
+func DuplicateStructField(src interface{}, desc interface{}) error {
+	// 判断是否是指针类型
+	if reflect.TypeOf(src).Kind() != reflect.Ptr || reflect.TypeOf(desc).Kind() != reflect.Ptr {
+		return errors.New("the param shoud be a pointer to the struct type")
+	}
+	// Elem()会去指针指向的值
+	if reflect.TypeOf(src).Elem().Kind() != reflect.Struct || reflect.TypeOf(desc).Elem().Kind() != reflect.Struct {
+		return errors.New("the param shoud be a pointer to the struct type")
+	}
+	// 解指针 获取 value
+	srcValue := reflect.ValueOf(src).Elem()
+	// 解指针 获取 type
+	srcType := reflect.TypeOf(src).Elem()
+	//
+	descValue := reflect.ValueOf(desc)
+	var (
+		srcField, descField reflect.StructField
+		ok                  bool
+	)
+	for i := 0; i < srcValue.NumField(); i++ {
+		srcField = srcType.Field(i)
+		// 判断类型里面有没有 名称相同的 field
+		if descField, ok = (descValue).Elem().Type().FieldByName(srcField.Name); !ok {
+			continue
+		}
+		// 判断类型是否相同
+		if srcField.Type == descField.Type {
+			// 找到该字段value
+			srcFielValue := srcValue.Field(i)
+			// 解指针 设置指针
+			descValue.Elem().FieldByName(srcField.Name).Set(srcFielValue)
+		}
+	}
+	return nil
 }

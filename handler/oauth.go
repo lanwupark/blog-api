@@ -32,7 +32,6 @@ const tokenRequestURLTemplate = `https://github.com/login/oauth/access_token?cli
 const userAPI = `https://api.github.com/user`
 
 func init() {
-
 	// 初始化请求模板
 	tokenRequestTemplate = template.Must(template.New("tokenRequest").Parse(tokenRequestURLTemplate))
 	// 初始化http client
@@ -76,11 +75,15 @@ func (OAuthHandler) LoginOAuth(rw http.ResponseWriter, req *http.Request) {
 		panic(err)
 	}
 	// ---------------------4---------------------
+	user, err := userdao.UpSert(githubUserResponse)
+	if err != nil {
+		panic(err)
+	}
 	// ---------------------5---------------------
 	tokenSubject := &data.TokenClaimsSubject{
-		UserID:      githubUserResponse.ID,
-		UserLogin:   githubUserResponse.Login,
-		IsAdmin:     false,
+		UserID:      user.UserID,
+		UserLogin:   user.UserLogin,
+		IsAdmin:     user.IsAdmin,
 		GithubToken: githubTokenResponse.AccessToken,
 	}
 	token, err := util.CreateToken(tokenSubject)

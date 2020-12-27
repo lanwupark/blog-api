@@ -130,7 +130,7 @@ func GetDefaultRouter() *Router {
 	return r
 }
 
-// recoveryMiddleware 程序返回500
+// recoveryMiddleware panic 程序返回500
 func recoveryMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		defer func() {

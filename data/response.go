@@ -9,7 +9,7 @@ import (
 
 // TokenClaimsSubject token负荷 主体
 type TokenClaimsSubject struct {
-	UserID      uint64
+	UserID      uint
 	UserLogin   string
 	IsAdmin     bool
 	GithubToken string
@@ -83,14 +83,14 @@ func NewResultResponse(data interface{}) *ResultResponse {
 // GithubUserResponse github返回
 type GithubUserResponse struct {
 	Login     string //登录名
-	ID        uint64 `json:"id"`         //用户独有ID
+	ID        uint   `json:"id"`         //用户独有ID
 	NodeID    string `json:"node_id"`    //
 	AvatarURL string `json:"avatar_url"` //头像url
 	URL       string `json:"url"`        //用户数据url
-	Blog      string //博客
-	Email     string //邮箱
-	Localtion string //位置
-	Name      string //名称
+	Blog      string `json:",omitempty"` //博客
+	Email     string `json:",omitempty"` //邮箱
+	Localtion string `json:",omitempty"` //位置
+	Name      string `json:",omitempty"` //名称
 }
 
 // UserResponse 返回给前端 不一样的json序列化
