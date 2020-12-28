@@ -20,3 +20,9 @@ type AddCommentRequest struct {
 type LikeArticleRequest struct {
 	LikeType LikeType `validate:"required,oneof=S F"` //S 和 F
 }
+
+// FeedbackRequest 请求
+type FeedbackRequest struct {
+	Description string `validate:"required"`
+	Contact     string
+}

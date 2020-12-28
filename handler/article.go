@@ -9,6 +9,7 @@ import (
 	"github.com/lanwupark/blog-api/data"
 	"github.com/lanwupark/blog-api/service"
 	"github.com/lanwupark/blog-api/util"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var (
@@ -20,6 +21,9 @@ type ArticleHandler struct{}
 
 // ArticleIDContextKey 上下文
 type ArticleIDContextKey struct{}
+
+// UserIDContextKey ...
+type UserIDContextKey struct{}
 
 // LikeArticleContextKey 上下文
 type LikeArticleContextKey struct{}
@@ -113,11 +117,75 @@ func (ah *ArticleHandler) LikeArticle(rw http.ResponseWriter, req *http.Request)
 	user := req.Context().Value(UserHandler{}).(*data.TokenClaimsSubject)
 	// go in
 	if err := articleservice.LikeArticle(id, user.UserID, likeArticleRequest.LikeType); err != nil {
+		if err == mongo.ErrNoDocuments {
+			RespondNotFound(rw, err)
+			return
+		}
 		RespondInternalServerError(rw, err)
 		return
 	}
 	RespondStatusOk(rw)
 }
+
+// CancelLikeArticle 取消喜欢文章
+func (ah *ArticleHandler) CancelLikeArticle(rw http.ResponseWriter, req *http.Request) {
+	id := req.Context().Value(ArticleIDContextKey{}).(uint64)
+	user := req.Context().Value(UserHandler{}).(*data.TokenClaimsSubject)
+	// 从路由里面获取
+	likeType := data.LikeType(mux.Vars(req)["like_type"])
+	// go in
+	if err := articleservice.CancelLikeArticle(id, user.UserID, likeType); err != nil {
+		RespondInternalServerError(rw, err)
+		return
+	}
+	RespondStatusOk(rw)
+}
+
+// GetArticleDetail 获取文章详情
+func (ah *ArticleHandler) GetArticleDetail(rw http.ResponseWriter, req *http.Request) {
+	id := req.Context().Value(ArticleIDContextKey{}).(uint64)
+	// in
+	detail, err := articleservice.GetArticleDetail(id)
+	if err != nil {
+		// 404
+		if err == mongo.ErrNoDocuments {
+			RespondNotFound(rw, err)
+			return
+		}
+		// 500
+		RespondInternalServerError(rw, err)
+		return
+	}
+	res := data.NewResultResponse(detail)
+	util.ToJSON(res, rw)
+}
+
+// DeleteArticleOrComment 删除某条评论或文章 及其子评论
+func (ah *ArticleHandler) DeleteArticleOrComment(rw http.ResponseWriter, req *http.Request) {
+	id := req.Context().Value(ArticleIDContextKey{}).(uint64)
+	user := req.Context().Value(UserHandler{}).(*data.TokenClaimsSubject)
+	if err := articleservice.DeleteArticleOrComment(id, user.UserID); err != nil {
+		RespondInternalServerError(rw, err)
+		return
+	}
+	RespondStatusOk(rw)
+}
+
+// GetFavoriteList 获取收藏夹
+func (ah *ArticleHandler) GetFavoriteList(rw http.ResponseWriter, req *http.Request) {
+	userid := req.Context().Value(UserIDContextKey{}).(uint)
+	res, err := articleservice.GetFavoriteList(userid)
+	if err != nil {
+		RespondInternalServerError(rw, err)
+		return
+	}
+	resp := data.NewResultListResponse(res)
+	util.ToJSON(resp, rw)
+}
+
+//
+// -----------------------------------------------------------------------------------
+//
 
 // GetRoutes 实现接口
 func (ah *ArticleHandler) GetRoutes() []*config.Route {
@@ -139,11 +207,35 @@ func (ah *ArticleHandler) GetRoutes() []*config.Route {
 		Handler:         ah.AddComment,
 		MiddlewareFuncs: []mux.MiddlewareFunc{MiddlewareRequireAuthorization, MiddlewareCheckArticleIDValidation, MiddlewareAddCommentValidation},
 	}
+	deleteArticleOrComment := &config.Route{
+		Method:          http.MethodDelete,
+		Path:            "/article/comment/{article_id:[0-9]+}", //这里都是雪花算法id
+		Handler:         ah.DeleteArticleOrComment,
+		MiddlewareFuncs: []mux.MiddlewareFunc{MiddlewareRequireAuthorization, MiddlewareCheckArticleIDValidation},
+	}
 	likeArticle := &config.Route{
 		Method:          http.MethodPost,
 		Path:            "/article/like/{article_id:[0-9]+}",
 		Handler:         ah.LikeArticle,
 		MiddlewareFuncs: []mux.MiddlewareFunc{MiddlewareRequireAuthorization, MiddlewareCheckArticleIDValidation, MiddlewareLikeArticleValidation},
 	}
-	return []*config.Route{addArticle, editArticle, addComment, likeArticle}
+	canelLikeArticle := &config.Route{
+		Method:          http.MethodDelete,
+		Path:            "/article/like/{article_id:[0-9]+}/{like_type:[SF]{1}}", //like type S或者F
+		Handler:         ah.CancelLikeArticle,
+		MiddlewareFuncs: []mux.MiddlewareFunc{MiddlewareRequireAuthorization, MiddlewareCheckArticleIDValidation},
+	}
+	getArticle := &config.Route{
+		Method:          http.MethodGet,
+		Path:            "/article/{article_id:[0-9]+}", //正则判断
+		Handler:         ah.GetArticleDetail,
+		MiddlewareFuncs: []mux.MiddlewareFunc{MiddlewareCheckArticleIDValidation},
+	}
+	getFavoriteList := &config.Route{
+		Method:          http.MethodGet,
+		Path:            "/article/favorite/{user_id:[0-9]+}", //正则判断
+		Handler:         ah.GetFavoriteList,
+		MiddlewareFuncs: []mux.MiddlewareFunc{MiddlewareCheckUserIDValidation},
+	}
+	return []*config.Route{addArticle, editArticle, addComment, deleteArticleOrComment, likeArticle, canelLikeArticle, getArticle, getFavoriteList}
 }

@@ -11,8 +11,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var ()
-
 // ArticleService 文章服务
 type ArticleService struct{}
 
@@ -147,20 +145,16 @@ func (ArticleService) AddComment(articleID uint64, commentReq *data.AddCommentRe
 	return commentID, err
 }
 
-// LikeArticle 喜欢文章 两种类型
+// LikeArticle 喜欢文章 两种类型 如果没有该文档 会返回mongo.ErrNoDocuments错误
 func (ArticleService) LikeArticle(articleID uint64, userID uint, likeType data.LikeType) error {
-	coll := conn.MongoDB.Collection(data.MongoCollectionArticle)
-	res := coll.FindOne(context.TODO(), bson.D{
-		{"articleid", articleID},
-	})
-	// 没找到
-	if err := res.Err(); err != nil {
-		if err != mongo.ErrNoDocuments {
-			log.WithError(err).Error("find article error")
+	if _, err := articledao.SelectOne(articleID); err != nil {
+		// 没找到
+		if err == mongo.ErrNoDocuments {
+			log.WithError(err).Warn("no document")
 			return err
 		}
-		// 忽略
-		return nil
+		log.WithError(err).Error("find article error")
+		return err
 	}
 	like := &data.Like{
 		ArticleID: articleID,
@@ -168,6 +162,159 @@ func (ArticleService) LikeArticle(articleID uint64, userID uint, likeType data.L
 		Type:      likeType,
 	}
 	db := conn.DB
-	_, err := db.Exec("INSERT INTO `like` (article_id,user_id,type) VALUES (?,?,?)", like.ArticleID, like.UserID, like.Type)
+	sqlTx := db.MustBegin()
+	defer sqlTx.Commit()
+	// 先删除之前的
+	_, err := sqlTx.Exec("DELETE FROM `like` WHERE article_id=? AND user_id=? AND type=? ", like.ArticleID, like.UserID, like.Type)
+	if err != nil {
+		sqlTx.Rollback()
+		return err
+	}
+	_, err = sqlTx.Exec("INSERT INTO `like` (article_id,user_id,type) VALUES (?,?,?)", like.ArticleID, like.UserID, like.Type)
+	if err != nil {
+		sqlTx.Rollback()
+	}
 	return err
+}
+
+// CancelLikeArticle 取消喜欢
+func (ArticleService) CancelLikeArticle(articleID uint64, userID uint, likeType data.LikeType) error {
+	like := &data.Like{
+		ArticleID: articleID,
+		UserID:    userID,
+		Type:      likeType,
+	}
+	db := conn.DB
+	// 先删除之前的
+	_, err := db.Exec("DELETE FROM `like` WHERE article_id=? AND user_id=? AND type=? ", like.ArticleID, like.UserID, like.Type)
+	return err
+}
+
+// GetArticleDetail 获取文章详情
+func (ArticleService) GetArticleDetail(articleID uint64) (*data.ArticleResponse, error) {
+	article, err := articledao.SelectOne(articleID)
+	if err != nil {
+		return nil, err
+	}
+	articleResp := article.TreeView()
+	likes, err := likedao.SelectByArticleID(articleID)
+	if err != nil {
+		return nil, err
+	}
+	stars, favoraties := []*data.LikeResponse{}, []*data.LikeResponse{}
+	for _, like := range likes {
+		likeResp := &data.LikeResponse{
+			UserID:    like.UserID,
+			UserLogin: like.UserLogin,
+			CreateAt:  like.CreateAt,
+		}
+		if like.Type == data.Favorite {
+			favoraties = append(favoraties, likeResp)
+		}
+		if like.Type == data.Star {
+			stars = append(stars, likeResp)
+		}
+	}
+	articleResp.Stars = stars
+	articleResp.Favorities = favoraties
+	// 增加点击数
+	go articledao.HitAddition(articleID)
+	return articleResp, nil
+}
+
+// DeleteArticleOrComment 删除文章或评论
+func (ArticleService) DeleteArticleOrComment(id uint64, userID uint) error {
+	coll := conn.MongoDB.Collection(data.MongoCollectionArticle)
+	// 先尝试删除文章
+	res, err := coll.UpdateOne(context.TODO(), bson.M{
+		"articleid": id,
+		"userid":    userID,
+	}, bson.D{
+		{"$set",
+			bson.D{
+				{"status", data.Deleted},
+			},
+		},
+	})
+	if err != nil && err != mongo.ErrNoDocuments {
+		log.WithError(err).Error("update error")
+		return err
+	}
+	if res.ModifiedCount > 0 {
+		log.Info("delete article")
+		return nil
+	}
+	// 再尝试删除评论
+	res, err = coll.UpdateOne(context.TODO(), bson.D{
+		{"comments.commentid", id},
+		{"comments.userid", userID},
+	}, bson.D{
+		{"$set", bson.D{
+			{"comments.$.status", data.Deleted},
+		},
+		},
+	})
+	if err != nil && err != mongo.ErrNoDocuments {
+		log.WithError(err).Error("update error")
+		return err
+	}
+	if res.ModifiedCount > 0 {
+		log.Info("delete comment")
+	}
+	return nil
+}
+
+// GetFavoriteList 获取收藏夹
+func (ArticleService) GetFavoriteList(userID uint) ([]*data.ArticleMaintainResponse, error) {
+	log.Infof("get user:%d favorite list", userID)
+	articleIDs, err := likedao.SelectArticleIDs(userID, data.Favorite)
+	if err != nil {
+		return nil, err
+	}
+	articles, err := articledao.Select(articleIDs)
+	if err != nil {
+		log.WithError(err).Info("get articles error")
+		return nil, err
+	}
+	articilMaintainsResponse := make([]*data.ArticleMaintainResponse, len(articles))
+	for index, article := range articles {
+		resp := &data.ArticleMaintainResponse{
+			ArticleID: article.ArticleID,
+			Title:     article.Title,
+			CreateAt:  article.CreateAt,
+		}
+		// 点赞总数
+		starNumber, err := likedao.SelectCountByArticleIDAndType(article.ArticleID, data.Star)
+		if err != nil {
+			log.WithError(err).Info("get star count error")
+			return nil, err
+		}
+		// 收藏总数
+		favoriteNumber, err := likedao.SelectCountByArticleIDAndType(article.ArticleID, data.Favorite)
+		if err != nil {
+			log.WithError(err).Info("get favorite count error")
+			return nil, err
+		}
+		// 获取最后修改时间
+		lastEditDate, lastEditUserID := article.GetLastEditDateAndUserID()
+		lastEditUserLogin, err := userdao.SelectUserLoginByUserId(lastEditUserID)
+		if err != nil {
+			return nil, err
+		}
+		// 查询该文章的分类
+		categories, err := categorydao.SelectNamesByArticleID(article.ArticleID)
+		if err != nil {
+			return nil, err
+		}
+		resp.StarNumber = starNumber
+		resp.FavoriteNumber = favoriteNumber
+		resp.LastEditUserID = lastEditUserID
+		resp.LastEditDate = lastEditDate
+		resp.LastEditDateString = util.GetIntervalString(lastEditDate, time.Now().UTC()) //获取时间间隔
+		resp.LastEditUserLogin = lastEditUserLogin
+		resp.Categories = categories
+		// 赋值
+		articilMaintainsResponse[index] = resp
+	}
+	return articilMaintainsResponse, nil
 }

@@ -51,10 +51,53 @@ func MiddlewareRequireAuthorization(next http.Handler) http.Handler {
 	})
 }
 
+// MiddlewareOptionalAuthorization 授权信息是可选的 这样也不会有错
+func MiddlewareOptionalAuthorization(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		log.Debugf("excute MiddlewareOptionalAuthorization method | uri:%s\n", req.RequestURI)
+		token, ok := req.Header["Authorization"]
+		if ok {
+			user, err := util.ParseToken(token[0])
+			if err == nil {
+				// 创建context 将user结构体传给之后需要用的handler
+				ctx := context.WithValue(req.Context(), UserHandler{}, user)
+				// 赋值新的request
+				req = req.WithContext(ctx)
+			}
+		}
+		next.ServeHTTP(rw, req)
+	})
+}
+
 // MiddlewareRequireAdminPermission 需要有管理员权限
 func MiddlewareRequireAdminPermission(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		log.Info("MiddlewareRequireAdminPremission")
+		log.Debugf("excute MiddlewareRequireAdminPermission method | uri:%s\n", req.RequestURI)
+		token, ok := req.Header["Authorization"]
+		if !ok {
+			// 没有请求头
+			rw.WriteHeader(http.StatusUnauthorized)
+			util.ToJSON(data.NewFailedResponse("Authorization Header Not Found", http.StatusUnauthorized), rw)
+			return
+		}
+		user, err := util.ParseToken(token[0])
+		if err != nil {
+			log.WithError(err).Error("parse token failed")
+			// token 解析失败
+			rw.WriteHeader(http.StatusUnauthorized)
+			util.ToJSON(data.NewFailedResponse("unauthorization", http.StatusUnauthorized), rw)
+			return
+		}
+		if !user.IsAdmin {
+			// 权限不足
+			rw.WriteHeader(http.StatusUnauthorized)
+			util.ToJSON(data.NewFailedResponse("unauthorization", http.StatusUnauthorized), rw)
+			return
+		}
+		// 创建context 将user结构体传给之后需要用的handler
+		ctx := context.WithValue(req.Context(), UserHandler{}, user)
+		// 赋值新的request
+		req = req.WithContext(ctx)
 		next.ServeHTTP(rw, req)
 	})
 }
@@ -67,11 +110,11 @@ func MiddlewareUserValidation(next http.Handler) http.Handler {
 	})
 }
 
-// MiddlewareCategoryValidation 校验分类中间件
-func MiddlewareCategoryValidation(next http.Handler) http.Handler {
+// MiddlewareFeedbackValidation 反馈中间件
+func MiddlewareFeedbackValidation(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		var category data.Category
-		validateThen(next, rw, req, CategoryHandler{}, &category)
+		var feedback data.FeedbackRequest
+		validateThen(next, rw, req, FeedbackContextKey{}, &feedback)
 	})
 }
 
@@ -99,6 +142,27 @@ func MiddlewareCheckArticleIDValidation(next http.Handler) http.Handler {
 		}
 		// 传输
 		ctx := context.WithValue(req.Context(), ArticleIDContextKey{}, uint64(id))
+		req = req.WithContext(ctx)
+		next.ServeHTTP(rw, req)
+	})
+}
+
+// MiddlewareCheckUserIDValidation 检查用户id中间件
+func MiddlewareCheckUserIDValidation(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		key := "user_id"
+		idStr, ok := mux.Vars(req)[key]
+		if !ok {
+			RespondBadRequest(rw, fmt.Sprintf("uri error: %s can't be null", key))
+			return
+		}
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			RespondBadRequest(rw, fmt.Sprintf("uri error: %s format error", key))
+			return
+		}
+		// 传输
+		ctx := context.WithValue(req.Context(), UserIDContextKey{}, uint(id))
 		req = req.WithContext(ctx)
 		next.ServeHTTP(rw, req)
 	})

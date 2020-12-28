@@ -41,7 +41,6 @@ func registerHTTPRequestHanlders() {
 	router.AddHTTPRequestHanlder(handler.NewUserHandler())
 	// oauthHandler
 	router.AddHTTPRequestHanlder(handler.NewOAuthHandler())
-	router.AddHTTPRequestHanlder(handler.NewCategoryHandler())
 	router.AddHTTPRequestHanlder(handler.NewArticleHandler())
 	router.AddHTTPRequestHanlder(handler.NewCommonHandler())
 }

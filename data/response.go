@@ -107,13 +107,16 @@ type UserResponse struct {
 
 // ArticleResponse TreeView结构的Article
 type ArticleResponse struct {
-	ArticleID uint64
-	UserID    uint
-	Title     string
-	Content   string
-	Comments  []*CommentResponse
-	Status    CommonType
-	CreateAt  time.Time
+	ArticleID  uint64
+	UserID     uint
+	Title      string
+	Content    string
+	Comments   []*CommentResponse
+	Hits       uint
+	Stars      []*LikeResponse
+	Favorities []*LikeResponse
+	Status     CommonType `json:"-"`
+	CreateAt   time.Time
 }
 
 // CommentResponse TreeView结构的Comment
@@ -134,4 +137,26 @@ type GithubTokenResponse struct {
 	AccessToken      string `json:"access_token"`
 	TokenType        string `json:"token_type"`
 	Scope            string `json:"_,omitempty"`
+}
+
+// LikeResponse 喜欢 回复
+type LikeResponse struct {
+	UserID    uint
+	UserLogin string
+	CreateAt  time.Time
+}
+
+// ArticleMaintainResponse 文章大致查询
+type ArticleMaintainResponse struct {
+	ArticleID          uint64
+	Title              string
+	Categories         []string
+	LastEditDate       time.Time
+	LastEditDateString string
+	LastEditUserID     uint
+	LastEditUserLogin  string
+	StarNumber         uint
+	CommentNumber      uint
+	FavoriteNumber     uint
+	CreateAt           time.Time
 }

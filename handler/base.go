@@ -15,6 +15,13 @@ func RespondInternalServerError(rw http.ResponseWriter, err error) {
 	util.ToJSON(resp, rw)
 }
 
+// RespondNotFound 404
+func RespondNotFound(rw http.ResponseWriter, err error) {
+	rw.WriteHeader(http.StatusNotFound)
+	resp := data.NewFailedResponse(err.Error(), http.StatusNotFound)
+	util.ToJSON(resp, rw)
+}
+
 // RespondStatusOk 正常返回
 func RespondStatusOk(rw http.ResponseWriter) {
 	resp := data.NewSuccessResponse()

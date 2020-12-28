@@ -152,11 +152,11 @@ func recoveryMiddleware(next http.Handler) http.Handler {
 // contentTypeJSONMiddleware 返回头里面有 Content-type
 func contentTypeJSONMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		next.ServeHTTP(rw, req)
 		_, hdCT := rw.Header()["Content-Type"]
 		if !hdCT {
 			rw.Header().Set("Content-Type", "application/json; charset=utf-8")
 		}
+		next.ServeHTTP(rw, req)
 	})
 }
 

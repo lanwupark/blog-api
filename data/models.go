@@ -12,6 +12,8 @@ const (
 	MongoCollectionArticle = "article"
 	// MongoCollectionAlbum 集合
 	MongoCollectionAlbum = "album"
+	// MongoCollectionFeedback 集合
+	MongoCollectionFeedback = "feedback"
 )
 
 // LikeType 喜欢的类型
@@ -137,18 +139,24 @@ type Photo struct {
 }
 
 // TreeView 将Article存在mongo里的结果转为树形结构 以便更直观的显示  实现:2个map+2个for循环 小小算法 可笑可笑
+// 同时  **这里还会过滤一些被删除和被拉黑的评论**
 func (article *Article) TreeView() *ArticleResponse {
 	res := &ArticleResponse{
 		ArticleID: article.ArticleID,
 		UserID:    article.UserID,
 		Title:     article.Title,
 		Content:   article.Content,
+		Hits:      article.Hits,
 		Status:    article.Status,
 		CreateAt:  article.CreateAt,
 	}
 	// 定义两个map 评论ID map(唯一)和 reply to map (同一条评论可能有多个回复，所以是切片)
 	commentIDMap, replyToMap := map[uint64]*CommentResponse{}, map[uint64][]*CommentResponse{}
 	for _, comment := range article.Comments {
+		// 过滤被拉黑的评论
+		if comment.Status != Normal {
+			continue
+		}
 		commentResponse := &CommentResponse{
 			CommentID: comment.CommentID,
 			UserID:    comment.UserID,
@@ -164,6 +172,10 @@ func (article *Article) TreeView() *ArticleResponse {
 	}
 	// 把ReplyTo加到与CommentResponse CommentID相等的Comments字段下
 	for _, comment := range article.Comments {
+		// 过滤被拉黑的评论
+		if comment.Status != Normal {
+			continue
+		}
 		// 获取该评论
 		commentResponse := commentIDMap[comment.CommentID]
 		// 获取回复该评论的slice集合 并将其加入到 该评论的回复集合中
@@ -172,6 +184,23 @@ func (article *Article) TreeView() *ArticleResponse {
 	// 回复map中 键与文章的id相等的切片就是最大的子评论
 	res.Comments = replyToMap[res.ArticleID]
 	return res
+}
+
+// GetLastEditDateAndUserID 获取最后次修改的时间 和该用户
+// 逻辑:优先级校验 文章更新时间UpdateAt (创建时createAt和updateAt相同)  (因为在mongo里是push的所以评论最新评论始终在最后面) > 文章创建时间
+func (article *Article) GetLastEditDateAndUserID() (ltime time.Time, userID uint) {
+	ltime = article.UpdateAt
+	userID = article.UserID
+	comments := article.Comments
+	for i := len(comments) - 1; i >= 0; i-- {
+		// 正常状态并且大于文章更新时间
+		if comments[i].Status == Normal && comments[i].CreateAt.Unix() > ltime.Unix() {
+			ltime = comments[i].CreateAt
+			userID = comments[i].UserID
+			return
+		}
+	}
+	return
 }
 
 // DuplicateStructField 复制结构体字段:复制约束 两个名称相同,类型相同
@@ -209,4 +238,12 @@ func DuplicateStructField(src interface{}, desc interface{}) error {
 		}
 	}
 	return nil
+}
+
+// Feedback 反馈
+type Feedback struct {
+	UserID      uint
+	UserLogin   string //为了后面好看 就不满足范式了
+	Description string
+	Contact     string
 }

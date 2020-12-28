@@ -94,6 +94,8 @@ func (OAuthHandler) LoginOAuth(rw http.ResponseWriter, req *http.Request) {
 	referer = strings.TrimSuffix(referer, "/")
 	redirectURL := fmt.Sprintf("%s/oauth/token?set_token=%s&github_token=%s", referer, token, githubTokenResponse.AccessToken)
 	log.Infof("url:%s", redirectURL)
+	// 删除 content type 底层代码会加上text/html
+	rw.Header().Del("Content-Type")
 	// 重定向
 	http.Redirect(rw, req, redirectURL, http.StatusFound)
 }

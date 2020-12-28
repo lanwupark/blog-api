@@ -1,24 +1,17 @@
 package dao
 
-import (
-	"context"
-
-	"github.com/lanwupark/blog-api/data"
-)
-
 type CategoryDao struct{}
 
 func NewCategoryDao() *CategoryDao {
 	return &CategoryDao{}
 }
 
-func (CategoryDao) InsertOneToMongo(category *data.Category) (id interface{}, err error) {
-	mongodb := conn.MongoDB
-	coll := mongodb.Collection("categories")
-	res, err := coll.InsertOne(context.TODO(), category)
-	if err != nil {
-		return
+// SelectNamesByArticleID 搜索某文章的分类
+func (CategoryDao) SelectNamesByArticleID(articleID uint64) ([]string, error) {
+	db := conn.DB
+	var res []string
+	if err := db.Select(&res, "SELECT name FROM categories WHERE article_id=?", articleID); err != nil {
+		return nil, err
 	}
-	id = res.InsertedID
-	return
+	return res, nil
 }
