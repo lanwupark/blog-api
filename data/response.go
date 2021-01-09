@@ -160,3 +160,10 @@ type ArticleMaintainResponse struct {
 	FavoriteNumber     uint
 	CreateAt           time.Time
 }
+
+// AddPhotoResponse 添加图片返回
+type AddPhotoResponse struct {
+	FileName         string
+	OriginalFileName string
+	FileSize         int
+}

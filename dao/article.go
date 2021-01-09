@@ -8,8 +8,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+// ArticleDao ...
 type ArticleDao struct{}
 
+// NewArticleDao ...
 func NewArticleDao() *ArticleDao {
 	return &ArticleDao{}
 }

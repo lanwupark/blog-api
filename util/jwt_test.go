@@ -3,6 +3,7 @@ package util_test
 import (
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/lanwupark/blog-api/data"
 	"github.com/lanwupark/blog-api/util"
 	"github.com/stretchr/testify/assert"
@@ -42,4 +43,8 @@ func TestExpired(t *testing.T) {
 	user, err := util.ParseToken(token)
 	assert.EqualError(err, "Token is expired")
 	assert.Nil(user)
+}
+
+func TestUUID(t *testing.T) {
+	t.Log(uuid.New().String())
 }

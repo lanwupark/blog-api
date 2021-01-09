@@ -26,3 +26,13 @@ type FeedbackRequest struct {
 	Description string `validate:"required"`
 	Contact     string
 }
+
+// AddAlbumRequest 添加相册请求
+type AddAlbumRequest struct {
+	AlbumID     uint64 `validate:"required"`
+	Title       string `validate:"required,min=10"`
+	CoverName   string
+	Description string
+	Location    string
+	PhotoList   []string //要添加的uuid文件名集合
+}

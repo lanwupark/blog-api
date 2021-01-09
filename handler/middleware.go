@@ -147,6 +147,27 @@ func MiddlewareCheckArticleIDValidation(next http.Handler) http.Handler {
 	})
 }
 
+// MiddlewareCheckAlbumIDValidation 检测相册ID中间件
+func MiddlewareCheckAlbumIDValidation(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		key := "album_id"
+		idStr, ok := mux.Vars(req)[key]
+		if !ok {
+			RespondBadRequest(rw, fmt.Sprintf("uri error: %s can't be null", key))
+			return
+		}
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			RespondBadRequest(rw, fmt.Sprintf("uri error: %s format error", key))
+			return
+		}
+		// 传输
+		ctx := context.WithValue(req.Context(), AlbumIDContextKey{}, uint64(id))
+		req = req.WithContext(ctx)
+		next.ServeHTTP(rw, req)
+	})
+}
+
 // MiddlewareCheckUserIDValidation 检查用户id中间件
 func MiddlewareCheckUserIDValidation(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
@@ -189,6 +210,14 @@ func MiddlewareLikeArticleValidation(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		var likeRequest data.LikeArticleRequest
 		validateThen(next, rw, req, LikeArticleContextKey{}, &likeRequest)
+	})
+}
+
+// MiddlewareAddAlbumValidation 检验
+func MiddlewareAddAlbumValidation(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		var addAlbumRequest data.AddAlbumRequest
+		validateThen(next, rw, req, AddAlbumContextKey{}, &addAlbumRequest)
 	})
 }
 

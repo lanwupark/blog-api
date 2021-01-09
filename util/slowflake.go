@@ -2,8 +2,10 @@ package util
 
 // 雪花算法生成id
 import (
+	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/sony/sonyflake"
 )
 
@@ -39,4 +41,9 @@ func MustGetNextID() uint64 {
 		panic(err)
 	}
 	return res
+}
+
+// NewUUID 创建新的uuid
+func NewUUID() string {
+	return strings.ReplaceAll(uuid.New().String(), "-", "")
 }

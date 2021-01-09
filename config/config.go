@@ -23,8 +23,10 @@ type ApplicationProperties struct {
 	DSN               string //数据库连接串
 	MongoURL          string //mongodb 连接串
 	MongoDatabase     string //mongodb 数据库
-	BindAdreess       string //url
+	RedisURL          string //redis 连接串
+	BindAdreess       string //restful url
 	FileBaseDir       string //文件存储基础位置
+	FileMaxSize       int    //文件最大大小
 	OAuthClientID     string //github OAuth 的client ID
 	OAuthClientSecret string //github OAuth 的client secret
 }

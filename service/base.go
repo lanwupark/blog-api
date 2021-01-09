@@ -10,6 +10,7 @@ var (
 	likedao     *dao.LikeDao
 	categorydao *dao.CategoryDao
 	userdao     *dao.UserDao
+	albumdao    *dao.AlbumDao
 	conn        = config.GetConnection()
 )
 
@@ -18,4 +19,5 @@ func init() {
 	likedao = dao.NewLikeDao()
 	categorydao = dao.NewCategoryDao()
 	userdao = dao.NewUserDao()
+	albumdao = dao.NewAlbumDao()
 }

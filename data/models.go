@@ -118,6 +118,7 @@ type Comment struct {
 // Album 相册
 type Album struct {
 	AlbumID   uint64
+	UserID    uint
 	Title     string
 	CoverName string
 	Location  string

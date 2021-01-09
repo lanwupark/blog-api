@@ -18,9 +18,12 @@ func init() {
 	flag.StringVar(&c.DSN, "dsn", "root:123456@tcp(127.0.0.1:3306)/blog?charset=utf8mb4&parseTime=True&loc=Local", "dabatase connection string")
 	flag.StringVar(&c.BindAdreess, "address", ":8080", "server address")
 	flag.StringVar(&c.MongoURL, "mongo-url", "mongodb://localhost:27017", "the mongo db connection string")
+	flag.StringVar(&c.RedisURL, "redis-url", "redis://localhost:6379/0", "the redis db connection string")
 	flag.StringVar(&c.MongoDatabase, "mongo-db", "blog", "the default mongodb database")
 	flag.StringVar(&c.OAuthClientID, "oauth-id", "0fbcd40d4a1e12920596", "github oauth client id")
 	flag.StringVar(&c.OAuthClientSecret, "oauth-secret", "e449dfcd57e98903e50a4ee5208475ee0009c39a", "github oauth client secret")
+	flag.StringVar(&c.FileBaseDir, "file-base-dir", "files", "file base dir")
+	flag.IntVar(&c.FileMaxSize, "file-max-size", 1024*1024*4, "file max size")
 }
 
 func main() {
@@ -43,6 +46,8 @@ func registerHTTPRequestHanlders() {
 	router.AddHTTPRequestHanlder(handler.NewOAuthHandler())
 	router.AddHTTPRequestHanlder(handler.NewArticleHandler())
 	router.AddHTTPRequestHanlder(handler.NewCommonHandler())
+	// 相册 handler
+	router.AddHTTPRequestHanlder(handler.NewAlbumHander())
 }
 
 // hookFunc 用于平滑退出程序
