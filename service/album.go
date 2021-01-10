@@ -2,6 +2,7 @@ package service
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -13,6 +14,7 @@ import (
 	"github.com/lanwupark/blog-api/config"
 	"github.com/lanwupark/blog-api/data"
 	"github.com/lanwupark/blog-api/util"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // AlbumService 相册服务
@@ -134,6 +136,10 @@ func (AlbumService) NewAlbum(userID uint, albumReq *data.AddAlbumRequest) error 
 	if err != nil {
 		return err
 	}
+	// 删除缓存的数据
+	if err = albumdao.DelCachePhotoListData(albumReq.AlbumID); err != nil {
+		return err
+	}
 	photoSet := make(map[string]bool, len(albumReq.PhotoList))
 	// 剩下的 photo list
 	realPhotoList := make([]*data.Photo, 0)
@@ -162,16 +168,17 @@ func (AlbumService) NewAlbum(userID uint, albumReq *data.AddAlbumRequest) error 
 		albumReq.CoverName = realPhotoList[0].Name
 	}
 	album := &data.Album{
-		AlbumID:   albumReq.AlbumID,
-		UserID:    userID,
-		Title:     albumReq.Title,
-		CoverName: albumReq.CoverName,
-		Location:  albumReq.Location,
-		Hits:      0,
-		Status:    data.Normal,
-		Photos:    realPhotoList,
-		CreateAt:  time.Now(),
-		UpdateAt:  time.Now(),
+		AlbumID:     albumReq.AlbumID,
+		UserID:      userID,
+		Title:       albumReq.Title,
+		Description: albumReq.Description,
+		CoverName:   albumReq.CoverName,
+		Location:    albumReq.Location,
+		Hits:        0,
+		Status:      data.Normal,
+		Photos:      realPhotoList,
+		CreateAt:    time.Now(),
+		UpdateAt:    time.Now(),
 	}
 	err = albumdao.AddAlbum(album)
 	return err
@@ -192,4 +199,87 @@ func (AlbumService) CancelNewAlbum(albumID uint64) error {
 	}
 	// 删除缓存集合
 	return albumdao.DelCachePhotoListData(albumID)
+}
+
+// EditAlbum 编辑相册
+func (AlbumService) EditAlbum(userID uint, albumID uint64, albumReq *data.EditAlbumRequest) error {
+	filter := bson.D{{"userid", userID}, {"albumid", albumID}}
+	update := bson.M{"updateat": time.Now()}
+	if strings.TrimSpace(albumReq.Title) != "" {
+		update["title"] = albumReq.Title
+	}
+	if strings.TrimSpace(albumReq.Description) != "" {
+		update["description"] = albumReq.Description
+	}
+	if strings.TrimSpace(albumReq.Location) != "" {
+		update["localtion"] = albumReq.Location
+	}
+	if strings.TrimSpace(albumReq.CoverName) != "" {
+		update["covername"] = albumReq.CoverName
+	}
+	albumColl := conn.MongoDB.Collection(data.MongoCollectionAlbum)
+	ctx := context.TODO()
+	// 更新数据
+	if _, err := albumColl.UpdateOne(ctx, filter, bson.D{{"$set", update}}); err != nil {
+		return err
+	}
+	// 删除相片
+	for _, val := range albumReq.DeletePhotoList {
+		path := filepath.Join(config.GetConfigs().FileBaseDir, val)
+		if err := os.Remove(path); err != nil {
+			return err
+		}
+	}
+	// 删除mongo里数据
+	pull := bson.D{
+		{"$pull", bson.D{
+			{"photos", bson.D{
+				{"name", bson.D{
+					{"$in", albumReq.DeletePhotoList},
+				}},
+			},
+			}},
+		},
+	}
+	_, err := albumColl.UpdateOne(ctx, bson.D{{"albumid", albumID}, {"userid", userID}}, pull)
+	return err
+}
+
+// GetAlbumInfo 获取相册信息
+func (AlbumService) GetAlbumInfo(userID uint) ([]*data.AlbumMaintainResponse, error) {
+	albums, err := albumdao.FindByUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+	albumMaintains := []*data.AlbumMaintainResponse{}
+	for _, val := range albums {
+		albumMaintain := &data.AlbumMaintainResponse{
+			AlbumID:   val.AlbumID,
+			AlbumName: val.Title,
+			CoverName: val.CoverName,
+			Location:  val.Location,
+			CreateAt:  val.CreateAt,
+		}
+		albumMaintains = append(albumMaintains, albumMaintain)
+	}
+	return albumMaintains, nil
+}
+
+// GetAlbumDetail 获取相册详细信息
+func (AlbumService) GetAlbumDetail(albumID uint64) (*data.Album, error) {
+	resp, err := albumdao.Get(albumID)
+	if err != nil {
+		return nil, err
+	}
+	// 过滤被拉黑的相片
+	var photos []*data.Photo
+	for _, val := range resp.Photos {
+		if val.Status == data.Normal {
+			photos = append(photos, val)
+		}
+	}
+	resp.Photos = photos
+	// 增加点击
+	go albumdao.HitAddition(albumID)
+	return resp, nil
 }

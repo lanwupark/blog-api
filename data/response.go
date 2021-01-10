@@ -155,6 +155,7 @@ type ArticleMaintainResponse struct {
 	LastEditDateString string
 	LastEditUserID     uint
 	LastEditUserLogin  string
+	Hits               uint
 	StarNumber         uint
 	CommentNumber      uint
 	FavoriteNumber     uint
@@ -166,4 +167,26 @@ type AddPhotoResponse struct {
 	FileName         string
 	OriginalFileName string
 	FileSize         int
+}
+
+// AlbumMaintainResponse 相册简约信息
+type AlbumMaintainResponse struct {
+	AlbumID   uint64
+	AlbumName string `bson:"title"`
+	CoverName string
+	Location  string
+	CreateAt  time.Time
+}
+
+// UserInfo 用户页用户信息
+type UserInfo struct {
+	UserID           uint
+	UserLogin        string
+	Email            string
+	DaysJoined       uint
+	FavoritedNumber  uint
+	StaredNumber     uint
+	CreateAt         time.Time
+	ArticleMaintains []*ArticleMaintainResponse
+	AlbumMaintains   []*AlbumMaintainResponse
 }

@@ -12,6 +12,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/lanwupark/blog-api/config"
+	"github.com/lanwupark/blog-api/dao"
 	"github.com/lanwupark/blog-api/data"
 	"github.com/lanwupark/blog-api/util"
 )
@@ -21,6 +22,7 @@ var (
 	oauthOnce            sync.Once
 	tokenRequestTemplate *template.Template //请求模板
 	httpclient           *http.Client       //http client
+	userdao              = dao.NewUserDao()
 )
 
 // 应用配置

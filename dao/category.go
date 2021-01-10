@@ -15,3 +15,13 @@ func (CategoryDao) SelectNamesByArticleID(articleID uint64) ([]string, error) {
 	}
 	return res, nil
 }
+
+// SelectMostNames 查询用户最常选的文章分类
+func (CategoryDao) SelectMostNames(size int) ([]string, error) {
+	db := conn.DB
+	var res []string
+	if err := db.Select(&res, "SELECT name FROM categories GROUP BY `name` ORDER BY COUNT(0) DESC LIMIT ?", size); err != nil {
+		return nil, err
+	}
+	return res, nil
+}

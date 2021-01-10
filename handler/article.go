@@ -183,6 +183,17 @@ func (ah *ArticleHandler) GetFavoriteList(rw http.ResponseWriter, req *http.Requ
 	util.ToJSON(resp, rw)
 }
 
+// GetUsualCategories 获取常用的分类排行
+func (ah *ArticleHandler) GetUsualCategories(rw http.ResponseWriter, req *http.Request) {
+	res, err := articleservice.GetUsualCategories()
+	if err != nil {
+		RespondInternalServerError(rw, err)
+		return
+	}
+	resp := data.NewResultListResponse(res)
+	util.ToJSON(resp, rw)
+}
+
 //
 // -----------------------------------------------------------------------------------
 //
@@ -237,5 +248,11 @@ func (ah *ArticleHandler) GetRoutes() []*config.Route {
 		Handler:         ah.GetFavoriteList,
 		MiddlewareFuncs: []mux.MiddlewareFunc{MiddlewareCheckUserIDValidation},
 	}
-	return []*config.Route{addArticle, editArticle, addComment, deleteArticleOrComment, likeArticle, canelLikeArticle, getArticle, getFavoriteList}
+	getCategories := &config.Route{
+		Method:          http.MethodGet,
+		Path:            "/article/categories",
+		Handler:         ah.GetUsualCategories,
+		MiddlewareFuncs: []mux.MiddlewareFunc{},
+	}
+	return []*config.Route{addArticle, editArticle, addComment, deleteArticleOrComment, likeArticle, canelLikeArticle, getArticle, getFavoriteList, getCategories}
 }

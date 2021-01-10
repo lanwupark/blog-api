@@ -61,3 +61,49 @@ func (ArticleDao) Select(articleIDs []uint64) ([]*data.Article, error) {
 	}
 	return articles, nil
 }
+
+// FindAllCalculateData 查询所有需要计算的数据
+func (ArticleDao) FindAllCalculateData() ([]*data.ArticleCalculate, error) {
+	coll := conn.MongoDB.Collection(data.MongoCollectionArticle)
+	datas := []*data.ArticleCalculateDTO{}
+	// 正常的
+	cursor, err := coll.Find(context.TODO(), bson.D{{"status", data.Normal}})
+	if err != nil {
+		return nil, err
+	}
+	err = cursor.All(context.TODO(), &datas)
+	if err != nil {
+		return nil, err
+	}
+	res := make([]*data.ArticleCalculate, len(datas))
+	for index, val := range datas {
+		var article data.ArticleCalculate
+		// 拷贝一手
+		data.DuplicateStructField(val, &article)
+		article.CommentNumber = len(val.Comments)
+		res[index] = &article
+	}
+	return res, nil
+}
+
+// SelectArticleIDsByUserID 根据文用户id搜索文章集合
+func (ArticleDao) SelectArticleIDsByUserID(userID uint) ([]uint64, error) {
+	type tempArtilce struct {
+		ArticleID uint64
+	}
+	coll := conn.MongoDB.Collection(data.MongoCollectionArticle)
+	datas := []*tempArtilce{}
+	cursor, err := coll.Find(context.TODO(), bson.D{{"userid", userID}})
+	if err != nil {
+		return nil, err
+	}
+	err = cursor.All(context.TODO(), &datas)
+	if err != nil {
+		return nil, err
+	}
+	res := []uint64{}
+	for _, val := range datas {
+		res = append(res, val.ArticleID)
+	}
+	return res, nil
+}

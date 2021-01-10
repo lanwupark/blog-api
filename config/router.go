@@ -66,6 +66,12 @@ func (r *Router) Config(configs *Configs) {
 	// 配置路由
 	r.configAllRoute()
 
+	// 配置文件系统
+	fileHandler := http.StripPrefix("/images/", http.FileServer(http.Dir(configs.FileBaseDir)))
+	filePath := "/images/{filename}"
+	router.Methods(http.MethodGet).Subrouter().Handle(filePath, fileHandler)
+	log.Infof("route path: %-70s method: %s", filePath, http.MethodGet)
+
 	// CORS 跨域资源访问
 	corsHanlder := handlers.CORS(handlers.AllowedOrigins([]string{"*"}))
 
@@ -78,7 +84,6 @@ func (r *Router) Config(configs *Configs) {
 	}
 
 	r.router = router
-
 	log.Infof("starting server on: %s", configs.BindAdreess)
 	// block
 	err := server.ListenAndServe()
@@ -107,7 +112,7 @@ func (r *Router) configAllRoute() {
 			middlewares := make([]mux.MiddlewareFunc, len(defaultMiddlewares))
 			copy(middlewares, defaultMiddlewares)
 			middlewares = append(middlewares, route.MiddlewareFuncs...)
-			log.Infof("route path: %s method: %s", route.Path, route.Method)
+			log.Infof("route path: %-70s method: %s", route.Path, route.Method)
 			// 使用中间件
 			r.Use(middlewares...)
 			// 映射处理函数

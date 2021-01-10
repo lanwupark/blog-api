@@ -54,10 +54,21 @@ func (UserDao) UpSert(gur *data.GithubUserResponse) (*data.User, error) {
 	return &user, nil
 }
 
-// SelectUserLoginByUserId 根据用户id搜用户名
-func (UserDao) SelectUserLoginByUserId(userID uint) (string, error) {
+// SelectUserLoginByUserID 根据用户id搜用户名
+func (UserDao) SelectUserLoginByUserID(userID uint) (string, error) {
 	db := conn.DB
 	var res string
 	err := db.Get(&res, "SELECT user_login FROM users WHERE user_id=?", userID)
 	return res, err
+}
+
+// SelectUserByUserIDAndType 搜索用户
+func (UserDao) SelectUserByUserIDAndType(userID uint, status data.CommonType) (*data.User, error) {
+	db := conn.DB
+	var user data.User
+	err := db.Get(&user, "SELECT * FROM users WHERE user_id=? AND status=?", userID, status)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"strconv"
 
+	"github.com/apex/log"
 	"github.com/lanwupark/blog-api/data"
 	"github.com/lanwupark/blog-api/util"
 	"go.mongodb.org/mongo-driver/bson"
@@ -20,7 +21,7 @@ func NewAlbumDao() *AlbumDao {
 // Get 查询相册集
 func (AlbumDao) Get(albumID uint64) (*data.Album, error) {
 	albumColl := conn.MongoDB.Collection(data.MongoCollectionAlbum)
-	result := albumColl.FindOne(context.TODO(), bson.D{{"albumid", albumID}})
+	result := albumColl.FindOne(context.TODO(), bson.D{{"albumid", albumID}, {"status", data.Normal}})
 	if result.Err() != nil {
 		return nil, result.Err()
 	}
@@ -86,4 +87,47 @@ func (AlbumDao) DelCachePhotoListData(albumID uint64) error {
 	rds := conn.Redis
 	res := rds.Del(context.TODO(), strconv.Itoa(int(albumID)))
 	return res.Err()
+}
+
+// FindByUserID 通过用户id查询
+func (AlbumDao) FindByUserID(userID uint) ([]*data.Album, error) {
+	albumColl := conn.MongoDB.Collection(data.MongoCollectionAlbum)
+	ctx := context.TODO()
+	cursor, err := albumColl.Find(ctx, bson.M{"userid": userID, "status": data.Normal})
+	if err != nil {
+		return nil, err
+	}
+	res := make([]*data.Album, 0)
+	if err = cursor.All(ctx, &res); err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+// HitAddition 点击数增加
+func (AlbumDao) HitAddition(albumID uint64) {
+	coll := conn.MongoDB.Collection(data.MongoCollectionAlbum)
+	_, err := coll.UpdateOne(context.TODO(), bson.M{"albumid": albumID}, bson.D{
+		{"$inc", bson.D{
+			{"hits", 1},
+		}},
+	})
+	if err != nil {
+		log.WithError(err).Errorf("add hit error for: %d", albumID)
+	}
+}
+
+// FindMaintainByUserID 查询maintain user id
+func (AlbumDao) FindMaintainByUserID(userID uint) ([]*data.AlbumMaintainResponse, error) {
+	albumColl := conn.MongoDB.Collection(data.MongoCollectionAlbum)
+	ctx := context.TODO()
+	cursor, err := albumColl.Find(ctx, bson.M{"userid": userID, "status": data.Normal})
+	if err != nil {
+		return nil, err
+	}
+	res := []*data.AlbumMaintainResponse{}
+	if err = cursor.All(ctx, &res); err != nil {
+		return nil, err
+	}
+	return res, nil
 }

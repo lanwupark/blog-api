@@ -221,6 +221,13 @@ func MiddlewareAddAlbumValidation(next http.Handler) http.Handler {
 	})
 }
 
+func MiddlewareEditAlbumValidtion(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		var editAlbumRequest data.EditAlbumRequest
+		validateThen(next, rw, req, EditAlbumContextKey{}, &editAlbumRequest)
+	})
+}
+
 // checkID 检查路径上的id
 func checkID(rw http.ResponseWriter, req *http.Request, key string) (uint64, bool) {
 	idStr, ok := mux.Vars(req)[key]

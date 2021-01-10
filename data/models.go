@@ -117,16 +117,17 @@ type Comment struct {
 
 // Album 相册
 type Album struct {
-	AlbumID   uint64
-	UserID    uint
-	Title     string
-	CoverName string
-	Location  string
-	Hits      uint
-	Status    CommonType
-	Photos    []*Photo
-	CreateAt  time.Time
-	UpdateAt  time.Time
+	AlbumID     uint64
+	UserID      uint
+	Title       string
+	Description string
+	CoverName   string
+	Location    string
+	Hits        uint
+	Status      CommonType
+	Photos      []*Photo
+	CreateAt    time.Time
+	UpdateAt    time.Time
 }
 
 // Photo 相片

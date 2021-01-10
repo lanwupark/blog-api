@@ -4,10 +4,12 @@ import (
 	"flag"
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/apex/log"
 	"github.com/lanwupark/blog-api/config"
 	"github.com/lanwupark/blog-api/handler"
+	"github.com/lanwupark/blog-api/service"
 )
 
 var (
@@ -28,11 +30,12 @@ func init() {
 
 func main() {
 	flag.Parse()                  // 解析参数
-	log.SetLevel(log.DebugLevel)  //设置日志级别
-	registerHTTPRequestHanlders() //先向路由服务注册路由
+	log.SetLevel(log.DebugLevel)  // 设置日志级别
+	registerHTTPRequestHanlders() // 先向路由服务注册路由
 	c.RegisterServices()          // 注册所有服务配置
 	c.LoadConfigs()               // 加载所有服务配置
 	c.LogBanner()                 // 打印 banner
+	tickerFunc()                  // 定时函数
 	hookFunc()                    // 钩子函数
 	select {}                     // 让main函数阻塞 防止程序退出
 }
@@ -48,6 +51,18 @@ func registerHTTPRequestHanlders() {
 	router.AddHTTPRequestHanlder(handler.NewCommonHandler())
 	// 相册 handler
 	router.AddHTTPRequestHanlder(handler.NewAlbumHander())
+}
+
+// tickerFunc 定时函数 每小时重新设置一次排行
+func tickerFunc() {
+	service.CalculateSort()
+	ticker := time.NewTicker(1 * time.Hour)
+	go func(ticker *time.Ticker) {
+		for {
+			<-ticker.C
+			service.CalculateSort()
+		}
+	}(ticker)
 }
 
 // hookFunc 用于平滑退出程序

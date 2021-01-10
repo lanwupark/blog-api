@@ -265,7 +265,7 @@ func (ArticleService) DeleteArticleOrComment(id uint64, userID uint) error {
 }
 
 // GetFavoriteList 获取收藏夹
-func (ArticleService) GetFavoriteList(userID uint) ([]*data.ArticleMaintainResponse, error) {
+func (articleservice ArticleService) GetFavoriteList(userID uint) ([]*data.ArticleMaintainResponse, error) {
 	log.Infof("get user:%d favorite list", userID)
 	articleIDs, err := likedao.SelectArticleIDs(userID, data.Favorite)
 	if err != nil {
@@ -278,43 +278,72 @@ func (ArticleService) GetFavoriteList(userID uint) ([]*data.ArticleMaintainRespo
 	}
 	articilMaintainsResponse := make([]*data.ArticleMaintainResponse, len(articles))
 	for index, article := range articles {
-		resp := &data.ArticleMaintainResponse{
-			ArticleID: article.ArticleID,
-			Title:     article.Title,
-			CreateAt:  article.CreateAt,
-		}
-		// 点赞总数
-		starNumber, err := likedao.SelectCountByArticleIDAndType(article.ArticleID, data.Star)
-		if err != nil {
-			log.WithError(err).Info("get star count error")
-			return nil, err
-		}
-		// 收藏总数
-		favoriteNumber, err := likedao.SelectCountByArticleIDAndType(article.ArticleID, data.Favorite)
-		if err != nil {
-			log.WithError(err).Info("get favorite count error")
-			return nil, err
-		}
-		// 获取最后修改时间
-		lastEditDate, lastEditUserID := article.GetLastEditDateAndUserID()
-		lastEditUserLogin, err := userdao.SelectUserLoginByUserId(lastEditUserID)
+		resp, err := articleservice.setArticleMaintainResponse(article)
 		if err != nil {
 			return nil, err
 		}
-		// 查询该文章的分类
-		categories, err := categorydao.SelectNamesByArticleID(article.ArticleID)
-		if err != nil {
-			return nil, err
-		}
-		resp.StarNumber = starNumber
-		resp.FavoriteNumber = favoriteNumber
-		resp.LastEditUserID = lastEditUserID
-		resp.LastEditDate = lastEditDate
-		resp.LastEditDateString = util.GetIntervalString(lastEditDate, time.Now().UTC()) //获取时间间隔
-		resp.LastEditUserLogin = lastEditUserLogin
-		resp.Categories = categories
 		// 赋值
 		articilMaintainsResponse[index] = resp
 	}
 	return articilMaintainsResponse, nil
+}
+
+// GetArticleMaintain 获取文章大概
+func (articleservice ArticleService) GetArticleMaintain(articleID uint64) (*data.ArticleMaintainResponse, error) {
+	article, err := articledao.SelectOne(articleID)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := articleservice.setArticleMaintainResponse(article)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (ArticleService) setArticleMaintainResponse(article *data.Article) (*data.ArticleMaintainResponse, error) {
+	resp := &data.ArticleMaintainResponse{
+		ArticleID: article.ArticleID,
+		Title:     article.Title,
+		Hits:      article.Hits,
+		CreateAt:  article.CreateAt,
+	}
+	// 点赞总数
+	starNumber, err := likedao.SelectCountByArticleIDAndType(article.ArticleID, data.Star)
+	if err != nil {
+		log.WithError(err).Info("get star count error")
+		return nil, err
+	}
+	// 收藏总数
+	favoriteNumber, err := likedao.SelectCountByArticleIDAndType(article.ArticleID, data.Favorite)
+	if err != nil {
+		log.WithError(err).Info("get favorite count error")
+		return nil, err
+	}
+	// 获取最后修改时间
+	lastEditDate, lastEditUserID := article.GetLastEditDateAndUserID()
+	lastEditUserLogin, err := userdao.SelectUserLoginByUserID(lastEditUserID)
+	if err != nil {
+		return nil, err
+	}
+	// 查询该文章的分类
+	categories, err := categorydao.SelectNamesByArticleID(article.ArticleID)
+	if err != nil {
+		return nil, err
+	}
+	resp.StarNumber = starNumber
+	resp.FavoriteNumber = favoriteNumber
+	resp.LastEditUserID = lastEditUserID
+	resp.LastEditDate = lastEditDate
+	resp.LastEditDateString = util.GetIntervalString(lastEditDate, time.Now().UTC()) //获取时间间隔
+	resp.LastEditUserLogin = lastEditUserLogin
+	resp.Categories = categories
+	return resp, nil
+}
+
+// GetUsualCategories 获取常用分类
+func (ArticleService) GetUsualCategories() ([]string, error) {
+	rds := conn.Redis
+	res := rds.LRange(context.TODO(), RedisRankKeyCategoryKey, 0, -1)
+	return res.Val(), res.Err()
 }

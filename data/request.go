@@ -36,3 +36,12 @@ type AddAlbumRequest struct {
 	Location    string
 	PhotoList   []string //要添加的uuid文件名集合
 }
+
+// EditAlbumRequest 编辑相册请求
+type EditAlbumRequest struct {
+	Title           string
+	Description     string
+	Location        string
+	CoverName       string
+	DeletePhotoList []string
+}

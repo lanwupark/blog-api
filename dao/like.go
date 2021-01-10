@@ -38,3 +38,11 @@ func (LikeDao) SelectCountByArticleIDAndType(articleID uint64, likeType data.Lik
 	err := db.Get(&res, "SELECT count(0) FROM `like` WHERE article_id=? AND type=?", articleID, likeType)
 	return res, err
 }
+
+// SelectCountByUserIDAndType 找某用户的点赞和收藏总数
+func (LikeDao) SelectCountByUserIDAndType(userID uint, likeType data.LikeType) (uint, error) {
+	db := conn.DB
+	var res uint
+	err := db.Get(&res, "SELECT count(0) FROM `like` WHERE user_id=? AND type=?", userID, likeType)
+	return res, err
+}
