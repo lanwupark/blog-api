@@ -7,6 +7,13 @@ import (
 
 // 一些回复的结构体
 
+var (
+	// DefaultPageIndex 默认page index
+	DefaultPageIndex int64 = 1
+	// DefaultPageSize 默认 page size
+	DefaultPageSize int64 = 25
+)
+
 // TokenClaimsSubject token负荷 主体
 type TokenClaimsSubject struct {
 	UserID      uint
@@ -25,8 +32,8 @@ type GenericResponse struct {
 // ResultListResponse 多结果集返回
 type ResultListResponse struct {
 	GenericResponse
-	PageInfo
 	ResultList interface{} `json:",omitempty"` //结果集
+	PageInfo
 }
 
 // ResultResponse 单结果返回
@@ -37,8 +44,8 @@ type ResultResponse struct {
 
 // PageInfo 分页信息
 type PageInfo struct {
-	PageSize  uint `json:",omitempty"`
-	PageIndex uint `json:",omitempty"`
+	PageIndex int64 `json:",omitempty" schema:"page_index"`
+	PageSize  int64 `json:",omitempty" schema:"page_size"`
 }
 
 // NewFailedResponse 新的错误回应(带状态码)
@@ -64,6 +71,21 @@ func NewResultListResponse(data interface{}) *ResultListResponse {
 		GenericResponse: GenericResponse{
 			Successed: true,
 			Code:      http.StatusOK,
+		},
+		ResultList: data,
+	}
+}
+
+// NewPageInfoResultListResponse 返回一个分页信息的数据
+func NewPageInfoResultListResponse(data interface{}, pageInfo *PageInfo) *ResultListResponse {
+	return &ResultListResponse{
+		GenericResponse: GenericResponse{
+			Successed: true,
+			Code:      http.StatusOK,
+		},
+		PageInfo: PageInfo{
+			PageIndex: pageInfo.PageIndex,
+			PageSize:  pageInfo.PageSize,
 		},
 		ResultList: data,
 	}
@@ -162,6 +184,23 @@ type ArticleMaintainResponse struct {
 	CreateAt           time.Time
 }
 
+// ArticleMaintainSortRule 排序
+type ArticleMaintainSortRule []*ArticleMaintainResponse
+
+func (a ArticleMaintainSortRule) Len() int {
+	return len(a)
+}
+
+func (a ArticleMaintainSortRule) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
+}
+
+func (a ArticleMaintainSortRule) Less(i, j int) bool {
+	sumI := int(a[i].FavoriteNumber)*FavoriteScore + int(a[i].StarNumber)*StarScore + int(a[i].CommentNumber)*CommentScore + int(a[i].Hits)*HitScore
+	sumJ := int(a[j].FavoriteNumber)*FavoriteScore + int(a[j].StarNumber)*StarScore + int(a[j].CommentNumber)*CommentScore + int(a[j].Hits)*HitScore
+	return sumI > sumJ
+}
+
 // AddPhotoResponse 添加图片返回
 type AddPhotoResponse struct {
 	FileName         string
@@ -189,4 +228,14 @@ type UserInfo struct {
 	CreateAt         time.Time
 	ArticleMaintains []*ArticleMaintainResponse
 	AlbumMaintains   []*AlbumMaintainResponse
+}
+
+// FriendListResponse 好友列表回复
+type FriendListResponse struct {
+	FriendUserID    uint
+	FriendUserLogin string
+	Status          FriendType
+	Type            UpdateFriendType
+	CreateAt        time.Time
+	UpdateAt        time.Time
 }

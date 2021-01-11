@@ -19,6 +19,9 @@ var (
 // ArticleHandler 文章请求处理器
 type ArticleHandler struct{}
 
+// ArticleMaintainQueryKey 上下文
+type ArticleMaintainQueryKey struct{}
+
 // ArticleIDContextKey 上下文
 type ArticleIDContextKey struct{}
 
@@ -37,7 +40,7 @@ func NewArticleHandler() *ArticleHandler {
 }
 
 // AddArticle 添加一篇文章
-func (ah *ArticleHandler) AddArticle(rw http.ResponseWriter, req *http.Request) {
+func (ArticleHandler) AddArticle(rw http.ResponseWriter, req *http.Request) {
 	// 在中间件里获取
 	articleRequest := req.Context().Value(ArticleHandler{}).(*data.AddArticleRequest)
 	// 在中间件里获取
@@ -63,7 +66,7 @@ func (ah *ArticleHandler) AddArticle(rw http.ResponseWriter, req *http.Request) 
 }
 
 // AddComment 添加评论
-func (ah *ArticleHandler) AddComment(rw http.ResponseWriter, req *http.Request) {
+func (ArticleHandler) AddComment(rw http.ResponseWriter, req *http.Request) {
 	log.Info("add comment")
 	id := req.Context().Value(ArticleIDContextKey{}).(uint64)
 	comment := req.Context().Value(CommentContextKey{}).(*data.AddCommentRequest)
@@ -82,7 +85,7 @@ func (ah *ArticleHandler) AddComment(rw http.ResponseWriter, req *http.Request) 
 }
 
 // EditArticle 编辑文章
-func (ah *ArticleHandler) EditArticle(rw http.ResponseWriter, req *http.Request) {
+func (ArticleHandler) EditArticle(rw http.ResponseWriter, req *http.Request) {
 	log.Info("edit article")
 	id := req.Context().Value(ArticleIDContextKey{}).(uint64)
 	// 在中间件里获取
@@ -111,7 +114,7 @@ func (ah *ArticleHandler) EditArticle(rw http.ResponseWriter, req *http.Request)
 }
 
 // LikeArticle 喜欢文章
-func (ah *ArticleHandler) LikeArticle(rw http.ResponseWriter, req *http.Request) {
+func (ArticleHandler) LikeArticle(rw http.ResponseWriter, req *http.Request) {
 	id := req.Context().Value(ArticleIDContextKey{}).(uint64)
 	likeArticleRequest := req.Context().Value(LikeArticleContextKey{}).(*data.LikeArticleRequest)
 	user := req.Context().Value(UserHandler{}).(*data.TokenClaimsSubject)
@@ -128,7 +131,7 @@ func (ah *ArticleHandler) LikeArticle(rw http.ResponseWriter, req *http.Request)
 }
 
 // CancelLikeArticle 取消喜欢文章
-func (ah *ArticleHandler) CancelLikeArticle(rw http.ResponseWriter, req *http.Request) {
+func (ArticleHandler) CancelLikeArticle(rw http.ResponseWriter, req *http.Request) {
 	id := req.Context().Value(ArticleIDContextKey{}).(uint64)
 	user := req.Context().Value(UserHandler{}).(*data.TokenClaimsSubject)
 	// 从路由里面获取
@@ -142,7 +145,7 @@ func (ah *ArticleHandler) CancelLikeArticle(rw http.ResponseWriter, req *http.Re
 }
 
 // GetArticleDetail 获取文章详情
-func (ah *ArticleHandler) GetArticleDetail(rw http.ResponseWriter, req *http.Request) {
+func (ArticleHandler) GetArticleDetail(rw http.ResponseWriter, req *http.Request) {
 	id := req.Context().Value(ArticleIDContextKey{}).(uint64)
 	// in
 	detail, err := articleservice.GetArticleDetail(id)
@@ -161,7 +164,7 @@ func (ah *ArticleHandler) GetArticleDetail(rw http.ResponseWriter, req *http.Req
 }
 
 // DeleteArticleOrComment 删除某条评论或文章 及其子评论
-func (ah *ArticleHandler) DeleteArticleOrComment(rw http.ResponseWriter, req *http.Request) {
+func (ArticleHandler) DeleteArticleOrComment(rw http.ResponseWriter, req *http.Request) {
 	id := req.Context().Value(ArticleIDContextKey{}).(uint64)
 	user := req.Context().Value(UserHandler{}).(*data.TokenClaimsSubject)
 	if err := articleservice.DeleteArticleOrComment(id, user.UserID); err != nil {
@@ -172,7 +175,7 @@ func (ah *ArticleHandler) DeleteArticleOrComment(rw http.ResponseWriter, req *ht
 }
 
 // GetFavoriteList 获取收藏夹
-func (ah *ArticleHandler) GetFavoriteList(rw http.ResponseWriter, req *http.Request) {
+func (ArticleHandler) GetFavoriteList(rw http.ResponseWriter, req *http.Request) {
 	userid := req.Context().Value(UserIDContextKey{}).(uint)
 	res, err := articleservice.GetFavoriteList(userid)
 	if err != nil {
@@ -184,13 +187,25 @@ func (ah *ArticleHandler) GetFavoriteList(rw http.ResponseWriter, req *http.Requ
 }
 
 // GetUsualCategories 获取常用的分类排行
-func (ah *ArticleHandler) GetUsualCategories(rw http.ResponseWriter, req *http.Request) {
+func (ArticleHandler) GetUsualCategories(rw http.ResponseWriter, req *http.Request) {
 	res, err := articleservice.GetUsualCategories()
 	if err != nil {
 		RespondInternalServerError(rw, err)
 		return
 	}
 	resp := data.NewResultListResponse(res)
+	util.ToJSON(resp, rw)
+}
+
+// ArticleMaintainQuery 文章大概查询
+func (ArticleHandler) ArticleMaintainQuery(rw http.ResponseWriter, req *http.Request) {
+	queryRequest := req.Context().Value(ArticleMaintainQueryKey{}).(*data.ArticleMaintainQuery)
+	articleMaintainResp, pageInfo, err := articleservice.ArticleMaintainQuery(queryRequest)
+	if err != nil {
+		RespondInternalServerError(rw, err)
+		return
+	}
+	resp := data.NewPageInfoResultListResponse(articleMaintainResp, pageInfo)
 	util.ToJSON(resp, rw)
 }
 
@@ -254,5 +269,11 @@ func (ah *ArticleHandler) GetRoutes() []*config.Route {
 		Handler:         ah.GetUsualCategories,
 		MiddlewareFuncs: []mux.MiddlewareFunc{},
 	}
-	return []*config.Route{addArticle, editArticle, addComment, deleteArticleOrComment, likeArticle, canelLikeArticle, getArticle, getFavoriteList, getCategories}
+	articleMaintainQuery := &config.Route{
+		Method:          http.MethodGet,
+		Path:            "/article/query",
+		Handler:         ah.ArticleMaintainQuery,
+		MiddlewareFuncs: []mux.MiddlewareFunc{MiddlewareArticleMaintainQueryValidation},
+	}
+	return []*config.Route{articleMaintainQuery, addArticle, editArticle, addComment, deleteArticleOrComment, likeArticle, canelLikeArticle, getArticle, getFavoriteList, getCategories}
 }

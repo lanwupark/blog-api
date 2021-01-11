@@ -25,3 +25,12 @@ func (CategoryDao) SelectMostNames(size int) ([]string, error) {
 	}
 	return res, nil
 }
+
+// SelectArticleIDsByCategoryName 根据分类名查询articleID
+func (CategoryDao) SelectArticleIDsByCategoryName(name string) (res []uint64, err error) {
+	db := conn.DB
+	if err = db.Select(&res, "SELECT article_id FROM categories WHERE `name` = ?", name); err != nil {
+		return nil, err
+	}
+	return
+}

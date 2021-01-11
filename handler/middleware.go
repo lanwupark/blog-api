@@ -9,6 +9,7 @@ import (
 	"github.com/apex/log"
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/schema"
 	"github.com/lanwupark/blog-api/config"
 	"github.com/lanwupark/blog-api/data"
 	"github.com/lanwupark/blog-api/util"
@@ -221,10 +222,35 @@ func MiddlewareAddAlbumValidation(next http.Handler) http.Handler {
 	})
 }
 
+// MiddlewareEditAlbumValidtion ...
 func MiddlewareEditAlbumValidtion(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		var editAlbumRequest data.EditAlbumRequest
 		validateThen(next, rw, req, EditAlbumContextKey{}, &editAlbumRequest)
+	})
+}
+
+// MiddlewareUpdateFriendRequestValidtion ...
+func MiddlewareUpdateFriendRequestValidtion(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		var ppdateFriendStatusRequest data.UpdateFriendStatusRequest
+		validateThen(next, rw, req, UpdateFriendStatusRequestKey{}, &ppdateFriendStatusRequest)
+	})
+}
+
+// MiddlewareArticleMaintainQueryValidation 从query parameter里序列化数据
+func MiddlewareArticleMaintainQueryValidation(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		var articleMaintain data.ArticleMaintainQuery
+		err := schema.NewDecoder().Decode(&articleMaintain, req.URL.Query())
+		if err != nil {
+			RespondBadRequest(rw, err.Error())
+			return
+		}
+		// 传输
+		ctx := context.WithValue(req.Context(), ArticleMaintainQueryKey{}, &articleMaintain)
+		req = req.WithContext(ctx)
+		next.ServeHTTP(rw, req)
 	})
 }
 

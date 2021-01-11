@@ -45,3 +45,37 @@ type EditAlbumRequest struct {
 	CoverName       string
 	DeletePhotoList []string
 }
+
+// UpdateFriendType 更新好友状态请求类型
+type UpdateFriendType string
+
+const (
+	// Send 请求发送方
+	Send UpdateFriendType = "S"
+	// Receive 请求接收方
+	Receive UpdateFriendType = "R"
+)
+
+// UpdateFriendStatus 更新好友请求状态
+type UpdateFriendStatus string
+
+const (
+	// Yes 添加
+	Yes UpdateFriendStatus = "Y"
+	// Decline 拒绝
+	Decline UpdateFriendStatus = "D"
+)
+
+// UpdateFriendStatusRequest 更新好友状态请求
+type UpdateFriendStatusRequest struct {
+	FriendUserLogin string             `validate:"required"`
+	Status          UpdateFriendStatus `validate:"required,oneof=Y D"`
+	Type            UpdateFriendType   `validate:"required,oneof=S R"`
+}
+
+// ArticleMaintainQuery 文章大概查询
+type ArticleMaintainQuery struct {
+	Content      string `schema:"content"`
+	CategoryName string `schema:"category_name"`
+	PageInfo
+}

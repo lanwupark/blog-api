@@ -11,6 +11,7 @@ var (
 	categorydao *dao.CategoryDao
 	userdao     *dao.UserDao
 	albumdao    *dao.AlbumDao
+	friendao    *dao.FriendDao
 	conn        = config.GetConnection()
 )
 
@@ -20,4 +21,5 @@ func init() {
 	categorydao = dao.NewCategoryDao()
 	userdao = dao.NewUserDao()
 	albumdao = dao.NewAlbumDao()
+	friendao = dao.NewFriendDao()
 }

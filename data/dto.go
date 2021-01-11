@@ -6,6 +6,7 @@ type LikeDTO struct {
 	UserLogin string `db:"user_login"`
 }
 
+// ArticleCalculateDTO DTO 取消序列化一些没用的东西
 type ArticleCalculateDTO struct {
 	ArticleID uint64
 	UserID    uint
@@ -25,16 +26,16 @@ type ArticleCalculate struct {
 
 var (
 	// FavoriteScore 收藏得分
-	FavoriteScore = 1000
+	FavoriteScore = 3
 	// StarScore 喜欢得分
-	StarScore = 500
+	StarScore = 2
 	// CommentScore 评论得分
-	CommentScore = 400
+	CommentScore = 3
 	// HitScore 点击得分
-	HitScore = 200
+	HitScore = 1
 )
 
-// ByRule 排序用 排序规则: 收藏数*1000+点赞数*500+评论数*400+点击量*200
+// ByRule 排序用 排序规则: 收藏数*FavoriteScore+点赞数*StarScore+评论数*CommentScore+点击量*HitScore
 type ByRule []*ArticleCalculate
 
 func (a ByRule) Len() int {

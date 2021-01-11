@@ -84,7 +84,7 @@ type Like struct {
 
 // Friend 好友列表
 type Friend struct {
-	FriendID   uint `db:"friend_id"`
+	FriendsID  uint `db:"friends_id"`
 	FromUserID uint `db:"from_user_id"`
 	ToUserID   uint `db:"to_user_id"`
 	Status     FriendType

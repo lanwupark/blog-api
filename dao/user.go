@@ -28,8 +28,8 @@ func (UserDao) SelectAll() []*data.User {
 	return users
 }
 
-// UpSert 更新或者插入
-func (UserDao) UpSert(gur *data.GithubUserResponse) (*data.User, error) {
+// Upsert 更新或者插入
+func (UserDao) Upsert(gur *data.GithubUserResponse) (*data.User, error) {
 	db := conn.DB
 	var user data.User
 	stmtx, err := db.Preparex("SELECT * FROM users WHERE user_id = ?")
@@ -59,6 +59,14 @@ func (UserDao) SelectUserLoginByUserID(userID uint) (string, error) {
 	db := conn.DB
 	var res string
 	err := db.Get(&res, "SELECT user_login FROM users WHERE user_id=?", userID)
+	return res, err
+}
+
+// SelectUserIDByUserLogin 根据用户名搜用户id
+func (UserDao) SelectUserIDByUserLogin(userLogin string) (uint, error) {
+	db := conn.DB
+	var res uint
+	err := db.Get(&res, "SELECT user_id FROM users WHERE user_login=?", userLogin)
 	return res, err
 }
 

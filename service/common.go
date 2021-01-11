@@ -23,6 +23,8 @@ const (
 	RedisRankKeyUserArticleKey = "user_article_rank_${user_id}"
 	// RedisRankKeyCategoryKey redis分类排行
 	RedisRankKeyCategoryKey = "categories_rank"
+	// RedisRankKeyCategoryArticleKey redis每个分类的文章排行
+	RedisRankKeyCategoryArticleKey = "category_article_rank_${category}"
 )
 
 // CommonService 小需求写这里
@@ -47,6 +49,7 @@ func (CommonService) AddFeedback(user *data.TokenClaimsSubject, request *data.Fe
 
 // CalculateSort 计算排行:包括每个用户最火的文章 最火的分类 全局最火的文章 全部存入Redis中
 func CalculateSort() {
+	log.Info("set categories rank begin")
 	articleData, err := articledao.FindAllCalculateData()
 	if err != nil {
 		panic(err)
@@ -64,11 +67,12 @@ func CalculateSort() {
 		val.FavoriteNumber = int(num1)
 		val.StarNumber = int(num2)
 	}
-	// 排序
+	// 按排序规则排序
 	sort.Sort(data.ByRule(articleData))
 	// 存储排行
 	rds := conn.Redis
 	userMap := map[uint][]string{}
+	categoryMap := map[string][]string{}
 	ctx := context.TODO()
 	rds.Del(ctx, RedisRankKeyArticle)
 	articleIDs := []string{}
@@ -79,6 +83,14 @@ func CalculateSort() {
 		}
 		// 存储用户的文章
 		userMap[val.UserID] = append(userMap[val.UserID], strconv.Itoa(int(val.ArticleID)))
+		// 存储分类的文章
+		categories, err := categorydao.SelectNamesByArticleID(val.ArticleID)
+		if err != nil {
+			panic(err)
+		}
+		for _, category := range categories {
+			categoryMap[category] = append(categoryMap[category], strconv.Itoa(int(val.ArticleID)))
+		}
 	}
 	// 存储文章排行
 	res := rds.RPush(ctx, RedisRankKeyArticle, articleIDs)
@@ -98,16 +110,28 @@ func CalculateSort() {
 			panic(res.Err())
 		}
 	}
+	// 存储每个分类的文章排行
+	for category, articles := range categoryMap {
+		key := strings.Replace(RedisRankKeyCategoryArticleKey, "${category}", category, 1)
+		res := rds.Del(ctx, key)
+		if res.Err() != nil {
+			panic(res.Err())
+		}
+		res = rds.RPush(ctx, key, articles)
+		if res.Err() != nil {
+			panic(res.Err())
+		}
+	}
 	// 存储分类排行
 	categories, err := categorydao.SelectMostNames(CategoriesLeaderBoardSize)
 	if err != nil {
 		panic(err)
 	}
-	// 删除之前的
+	// 存储常用分类
 	rds.Del(ctx, RedisRankKeyCategoryKey)
 	res = rds.RPush(ctx, RedisRankKeyCategoryKey, categories)
 	if res.Err() != nil {
 		panic(res.Err())
 	}
-	log.Info("set categories rank")
+	log.Info("set categories rank over")
 }

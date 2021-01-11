@@ -60,6 +60,7 @@ func tickerFunc() {
 	go func(ticker *time.Ticker) {
 		for {
 			<-ticker.C
+			log.Info("recalculate sort")
 			service.CalculateSort()
 		}
 	}(ticker)

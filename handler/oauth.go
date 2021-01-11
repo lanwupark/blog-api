@@ -77,7 +77,7 @@ func (OAuthHandler) LoginOAuth(rw http.ResponseWriter, req *http.Request) {
 		panic(err)
 	}
 	// ---------------------4---------------------
-	user, err := userdao.UpSert(githubUserResponse)
+	user, err := userdao.Upsert(githubUserResponse)
 	if err != nil {
 		panic(err)
 	}

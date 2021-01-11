@@ -2,13 +2,19 @@ package service
 
 import (
 	"context"
+	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/apex/log"
+	"github.com/go-redis/redis/v8"
 	"github.com/lanwupark/blog-api/data"
 	"github.com/lanwupark/blog-api/util"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // ArticleService 文章服务
@@ -303,10 +309,11 @@ func (articleservice ArticleService) GetArticleMaintain(articleID uint64) (*data
 
 func (ArticleService) setArticleMaintainResponse(article *data.Article) (*data.ArticleMaintainResponse, error) {
 	resp := &data.ArticleMaintainResponse{
-		ArticleID: article.ArticleID,
-		Title:     article.Title,
-		Hits:      article.Hits,
-		CreateAt:  article.CreateAt,
+		ArticleID:     article.ArticleID,
+		Title:         article.Title,
+		Hits:          article.Hits,
+		CommentNumber: uint(len(article.Comments)),
+		CreateAt:      article.CreateAt,
 	}
 	// 点赞总数
 	starNumber, err := likedao.SelectCountByArticleIDAndType(article.ArticleID, data.Star)
@@ -346,4 +353,101 @@ func (ArticleService) GetUsualCategories() ([]string, error) {
 	rds := conn.Redis
 	res := rds.LRange(context.TODO(), RedisRankKeyCategoryKey, 0, -1)
 	return res.Val(), res.Err()
+}
+
+// ArticleMaintainQuery 文章大概查询
+// 逻辑:
+// 如果 category name 和 content都为空 直接从redis里查热门数据article id再查mongo
+// 如果只有category name的话 从redis里查出该分类的集合
+// 剩下的就直接查mongo
+func (articleservice ArticleService) ArticleMaintainQuery(query *data.ArticleMaintainQuery) ([]*data.ArticleMaintainResponse, *data.PageInfo, error) {
+	resp := []*data.ArticleMaintainResponse{}
+	rds := conn.Redis
+	// 设置默认分页数据
+	if query.PageIndex <= data.DefaultPageIndex {
+		query.PageIndex = data.DefaultPageIndex
+	}
+	if query.PageSize <= 0 {
+		query.PageSize = data.DefaultPageSize
+	}
+	// 计算skip limit
+	skip := (query.PageIndex - 1) * query.PageSize
+	end := query.PageIndex*query.PageSize - 1
+	limit := query.PageSize
+	// result
+	var articles []*data.Article
+	var err error
+	if strings.TrimSpace(query.Content) == "" {
+		var res *redis.StringSliceCmd
+		// 查热门数据
+		if strings.TrimSpace(query.CategoryName) == "" {
+			res = rds.LRange(context.TODO(), RedisRankKeyArticle, skip, end)
+		} else { // 查某个分类的数据
+			key := strings.Replace(RedisRankKeyCategoryArticleKey, "${category}", query.CategoryName, 1)
+			res = rds.LRange(context.TODO(), key, skip, end)
+		}
+		if res.Err() != nil {
+			return nil, nil, res.Err()
+		}
+		strRes := res.Val()
+		articleIDs := []uint64{}
+		for _, val := range strRes {
+			intVal, err := strconv.Atoi(val)
+			if err != nil {
+				return nil, nil, err
+			}
+			articleIDs = append(articleIDs, uint64(intVal))
+		}
+		// 查article mongo里 的不是有顺序的
+		articles, err = articledao.Select(articleIDs)
+		if err != nil {
+			return nil, nil, err
+		}
+	} else {
+		filter := bson.D{
+			{"status", data.Normal},
+			{"$or", bson.A{
+				bson.D{{"title", primitive.Regex{Pattern: query.Content, Options: "i"}}},
+				bson.D{{"content", primitive.Regex{Pattern: query.Content, Options: "i"}}},
+			}}}
+		// 如果有category 那么需要找出具体的articles
+		if strings.TrimSpace(query.CategoryName) != "" {
+			// 直接查mongo
+			categoryArticleIDs, err := categorydao.SelectArticleIDsByCategoryName(query.CategoryName)
+			if err != nil {
+				return nil, nil, err
+			}
+			filter = append(filter, bson.E{
+				Key: "articleid",
+				Value: bson.D{
+					{"$in", categoryArticleIDs},
+				}},
+			)
+		}
+		coll := conn.MongoDB.Collection(data.MongoCollectionArticle)
+		findoptions := &options.FindOptions{}
+		// 设置分页
+		findoptions.SetSkip(skip)
+		findoptions.SetLimit(limit)
+		// 查article
+		cursor, err := coll.Find(context.TODO(), filter, findoptions)
+		if err != nil {
+			return nil, nil, err
+		}
+		err = cursor.All(context.TODO(), &articles)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	// 设置 article maintain response
+	for _, val := range articles {
+		maintain, err := articleservice.setArticleMaintainResponse(val)
+		if err != nil {
+			return nil, nil, err
+		}
+		resp = append(resp, maintain)
+	}
+	// 排序
+	sort.Sort(data.ArticleMaintainSortRule(resp))
+	return resp, &data.PageInfo{query.PageIndex, query.PageSize}, nil
 }
