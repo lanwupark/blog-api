@@ -51,6 +51,8 @@ func registerHTTPRequestHanlders() {
 	router.AddHTTPRequestHanlder(handler.NewCommonHandler())
 	// 相册 handler
 	router.AddHTTPRequestHanlder(handler.NewAlbumHander())
+	// 管理员
+	router.AddHTTPRequestHanlder(handler.NewAdminHandler())
 }
 
 // tickerFunc 定时函数 每小时重新设置一次排行

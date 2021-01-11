@@ -1,5 +1,7 @@
 package data
 
+import "time"
+
 // 一些请求的结构体
 
 // AddArticleRequest 添加文章请求
@@ -78,4 +80,49 @@ type ArticleMaintainQuery struct {
 	Content      string `schema:"content"`
 	CategoryName string `schema:"category_name"`
 	PageInfo
+}
+
+// DateInterval 时间区间
+type DateInterval struct {
+	DateFrom *time.Time `schema:"date_from"`
+	DateTo   *time.Time `schema:"date_to"`
+}
+
+// AdminArticleQuery 管理文章查询
+type AdminArticleQuery struct {
+	ArticleID uint64     `schema:"article_id"`
+	UserLogin string     `schema:"user_login"`
+	Title     string     `schema:"title"`
+	Content   string     `schema:"content"`
+	Status    CommonType `schema:"status"`
+	PageInfo
+	DateInterval
+}
+
+// AdminPhotoQuery ...
+type AdminPhotoQuery struct {
+	AlbumID   uint64     `schema:"album_id"`
+	UserLogin string     `schema:"user_login"`
+	Status    CommonType `schame:"status"`
+	PageInfo
+	DateInterval
+}
+
+// AdminCommentQuery ...
+type AdminCommentQuery struct {
+	ArticleID uint64     `schema:"article_id"`
+	CommentID uint64     `schema:"comment_id"`
+	UserLogin string     `schema:"user_login"`
+	Status    CommonType `schema:"status"`
+	PageInfo
+	DateInterval
+}
+
+// AdminUserQuery ...
+type AdminUserQuery struct {
+	UserID    uint       `schema:"user_id"`
+	UserLogin string     `schema:"user_login"`
+	Status    CommonType `schema:"status"`
+	PageInfo
+	DateInterval
 }

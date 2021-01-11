@@ -26,9 +26,9 @@ type ArticleCalculate struct {
 
 var (
 	// FavoriteScore 收藏得分
-	FavoriteScore = 3
+	FavoriteScore = 4
 	// StarScore 喜欢得分
-	StarScore = 2
+	StarScore = 3
 	// CommentScore 评论得分
 	CommentScore = 3
 	// HitScore 点击得分

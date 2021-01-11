@@ -239,3 +239,37 @@ type FriendListResponse struct {
 	CreateAt        time.Time
 	UpdateAt        time.Time
 }
+
+// AdminArticleResponse ...
+type AdminArticleResponse struct {
+	ArticleID    uint64
+	UserID       uint
+	UserLogin    string
+	Title        string
+	Content      string
+	LastEditDate time.Time
+	Status       CommonType
+}
+
+// AdminPhotoResponse ...
+type AdminPhotoResponse struct {
+	AlbumID      uint64
+	UserID       uint
+	UserLogin    string
+	AlbumName    string
+	PhotoName    string
+	FileSize     int64
+	LastEditDate time.Time
+	Status       CommonType
+}
+
+// AdminCommentResponse ...
+type AdminCommentResponse struct {
+	ArticleID    uint64
+	CommentID    uint64
+	UserID       uint
+	UserLogin    string
+	Content      string
+	LastEditDate time.Time
+	Status       CommonType
+}
