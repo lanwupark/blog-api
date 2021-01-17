@@ -3,6 +3,7 @@ package dao
 import (
 	"context"
 	"strconv"
+	"time"
 
 	"github.com/apex/log"
 	"github.com/lanwupark/blog-api/data"
@@ -130,4 +131,15 @@ func (AlbumDao) FindMaintainByUserID(userID uint) ([]*data.AlbumMaintainResponse
 		return nil, err
 	}
 	return res, nil
+}
+
+// UpdatePhotoStatus  更新照片状态
+func (AlbumDao) UpdatePhotoStatus(photoName string, status data.CommonType) error {
+	coll := conn.MongoDB.Collection(data.MongoCollectionAlbum)
+	_, err := coll.UpdateOne(context.TODO(), bson.D{{"photos.name", photoName}}, bson.D{
+		{"$set", bson.D{
+			{"photos.$.status", status},
+			{"updateat", time.Now()},
+		}}})
+	return err
 }

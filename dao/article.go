@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"time"
 
 	"github.com/apex/log"
 	"github.com/lanwupark/blog-api/data"
@@ -106,4 +107,27 @@ func (ArticleDao) SelectArticleIDsByUserID(userID uint) ([]uint64, error) {
 		res = append(res, val.ArticleID)
 	}
 	return res, nil
+}
+
+// UpdateArticleStatus 更新文章状态
+func (ArticleDao) UpdateArticleStatus(articleID uint64, status data.CommonType) error {
+	coll := conn.MongoDB.Collection(data.MongoCollectionArticle)
+	_, err := coll.UpdateOne(context.TODO(), bson.D{{"articleid", articleID}}, bson.D{
+		{"$set", bson.D{
+			{"status", status},
+			{"updateat", time.Now()},
+		}}})
+	return err
+}
+
+// UpdateCommentStatus 更新评论状态
+func (ArticleDao) UpdateCommentStatus(commentID uint64, status data.CommonType) error {
+	coll := conn.MongoDB.Collection(data.MongoCollectionArticle)
+	_, err := coll.UpdateOne(context.TODO(), bson.D{{"comments.commentid", commentID}}, bson.D{
+		{"$set", bson.D{
+			{"comments.$.status", status},
+			{"updateat", time.Now()},
+		}},
+	})
+	return err
 }

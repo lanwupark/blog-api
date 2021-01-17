@@ -80,3 +80,10 @@ func (UserDao) SelectUserByUserIDAndType(userID uint, status data.CommonType) (*
 	}
 	return &user, nil
 }
+
+// UpdateUserStatus 更新用户状态
+func (UserDao) UpdateUserStatus(userID uint, status data.CommonType) error {
+	db := conn.DB
+	_, err := db.Exec("UPDATE users SET status=? WHERE user_id=?", status, userID)
+	return err
+}

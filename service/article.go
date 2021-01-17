@@ -252,8 +252,12 @@ func (ArticleService) DeleteArticleOrComment(id uint64, userID uint) error {
 	}
 	// 再尝试删除评论
 	res, err = coll.UpdateOne(context.TODO(), bson.D{
-		{"comments.commentid", id},
-		{"comments.userid", userID},
+		{"comments", bson.D{
+			{"$elemMatch", bson.D{
+				{"commentid", id},
+				{"userid", userID},
+			}},
+		}},
 	}, bson.D{
 		{"$set", bson.D{
 			{"comments.$.status", data.Deleted},
@@ -374,6 +378,7 @@ func (articleservice ArticleService) ArticleMaintainQuery(query *data.ArticleMai
 	skip := (query.PageIndex - 1) * query.PageSize
 	end := query.PageIndex*query.PageSize - 1
 	limit := query.PageSize
+	var total int64
 	// result
 	var articles []*data.Article
 	var err error
@@ -382,9 +387,19 @@ func (articleservice ArticleService) ArticleMaintainQuery(query *data.ArticleMai
 		// 查热门数据
 		if strings.TrimSpace(query.CategoryName) == "" {
 			res = rds.LRange(context.TODO(), RedisRankKeyArticle, skip, end)
+			intCmd := rds.LLen(context.TODO(), RedisRankKeyArticle)
+			if intCmd.Err() != nil {
+				return nil, nil, intCmd.Err()
+			}
+			total = intCmd.Val()
 		} else { // 查某个分类的数据
 			key := strings.Replace(RedisRankKeyCategoryArticleKey, "${category}", query.CategoryName, 1)
 			res = rds.LRange(context.TODO(), key, skip, end)
+			intCmd := rds.LLen(context.TODO(), key)
+			if intCmd.Err() != nil {
+				return nil, nil, intCmd.Err()
+			}
+			total = intCmd.Val()
 		}
 		if res.Err() != nil {
 			return nil, nil, res.Err()
@@ -438,6 +453,10 @@ func (articleservice ArticleService) ArticleMaintainQuery(query *data.ArticleMai
 		if err != nil {
 			return nil, nil, err
 		}
+		// total
+		if total, err = coll.CountDocuments(context.TODO(), filter); err != nil {
+			return nil, nil, err
+		}
 	}
 	// 设置 article maintain response
 	for _, val := range articles {
@@ -449,5 +468,5 @@ func (articleservice ArticleService) ArticleMaintainQuery(query *data.ArticleMai
 	}
 	// 排序
 	sort.Sort(data.ArticleMaintainSortRule(resp))
-	return resp, &data.PageInfo{query.PageIndex, query.PageSize}, nil
+	return resp, &data.PageInfo{query.PageIndex, query.PageSize, total}, nil
 }

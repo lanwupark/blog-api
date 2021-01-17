@@ -22,7 +22,7 @@ type Connection struct {
 	DB          *sqlx.DB        // sqlx DB
 	mongoClient *mongo.Client   // mongo Client
 	MongoDB     *mongo.Database // mongo DB
-	Redis       *redis.Client
+	Redis       *redis.Client   // redis DB
 }
 
 // Config 实现配置接口
@@ -80,6 +80,11 @@ func (c *Connection) Shutdown() {
 	}
 	// 关闭 mongo
 	err = c.mongoClient.Disconnect(context.TODO())
+	if err != nil {
+		log.Errorf("%+v\n", err)
+	}
+	// 关闭redis
+	err = c.Redis.Close()
 	if err != nil {
 		log.Errorf("%+v\n", err)
 	}

@@ -134,7 +134,7 @@ type Album struct {
 type Photo struct {
 	Name         string
 	OriginalName string
-	FileSize     uint64
+	FileSize     int64
 	Status       CommonType
 	CreateAt     time.Time
 	UpdateAt     time.Time

@@ -102,7 +102,7 @@ func (AlbumService) AddPhoto(userID uint, albumID uint64, fileName string, reade
 	photo := &data.Photo{
 		Name:         uuidFileName,
 		OriginalName: fileName,
-		FileSize:     uint64(size),
+		FileSize:     int64(size),
 		Status:       data.Normal,
 		CreateAt:     time.Now(),
 		UpdateAt:     time.Now(),

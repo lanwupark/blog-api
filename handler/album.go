@@ -124,7 +124,7 @@ func (album *AlbumHander) GetRoutes() []*config.Route {
 	}
 	addPhoto := &config.Route{
 		Method:          http.MethodPost,
-		Path:            "/album/photo/{album_id:[0-9]+}/{file_name:[a-zA-Z]+\\.[a-zA-Z]{3,4}}", //正则判断
+		Path:            "/album/photo/{album_id:[0-9]+}/{file_name:[0-9a-zA-Z]+\\.[a-zA-Z]{3,4}}", //正则判断
 		Handler:         album.AddPhoto,
 		MiddlewareFuncs: []mux.MiddlewareFunc{MiddlewareRequireAuthorization, MiddlewareCheckAlbumIDValidation},
 	}

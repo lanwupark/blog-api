@@ -254,6 +254,38 @@ func MiddlewareArticleMaintainQueryValidation(next http.Handler) http.Handler {
 	})
 }
 
+// MiddlewareAdminArticleMaintainQueryValidation 文章查询中间件
+func MiddlewareAdminArticleMaintainQueryValidation(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		var adminArticleQuery data.AdminArticleQuery
+		decodeQueryStringAndDoNextHandler(next, rw, req, AdminArticleQueryKey{}, &adminArticleQuery)
+	})
+}
+
+// MiddlewareAdminPhotoQueryValidation 照片查询中间件
+func MiddlewareAdminPhotoQueryValidation(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		var adminPhotoQuery data.AdminPhotoQuery
+		decodeQueryStringAndDoNextHandler(next, rw, req, AdminPhotoQueryKey{}, &adminPhotoQuery)
+	})
+}
+
+// MiddlewareAdminCommentQueryValidation 评论查询中间件
+func MiddlewareAdminCommentQueryValidation(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		var adminCommentQuery data.AdminCommentQuery
+		decodeQueryStringAndDoNextHandler(next, rw, req, AdminCommentQueryKey{}, &adminCommentQuery)
+	})
+}
+
+// MiddlewareAdminUserQueryValidation 用户查询中间件
+func MiddlewareAdminUserQueryValidation(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		var adminUserQuery data.AdminUserQuery
+		decodeQueryStringAndDoNextHandler(next, rw, req, AdminUserQueryKey{}, &adminUserQuery)
+	})
+}
+
 // checkID 检查路径上的id
 func checkID(rw http.ResponseWriter, req *http.Request, key string) (uint64, bool) {
 	idStr, ok := mux.Vars(req)[key]
@@ -327,4 +359,17 @@ func validateThen(next http.Handler, rw http.ResponseWriter, req *http.Request, 
 		}
 		next.ServeHTTP(rw, req)
 	}
+}
+
+// decodeQueryStringAndDoNextHandler 解密然后处理下一个handler
+func decodeQueryStringAndDoNextHandler(next http.Handler, rw http.ResponseWriter, req *http.Request, key interface{}, s interface{}) {
+	err := schema.NewDecoder().Decode(s, req.URL.Query())
+	if err != nil {
+		RespondBadRequest(rw, err.Error())
+		return
+	}
+	// 传输
+	ctx := context.WithValue(req.Context(), key, s)
+	req = req.WithContext(ctx)
+	next.ServeHTTP(rw, req)
 }

@@ -195,7 +195,6 @@ func userInfoRequestGet(rw http.ResponseWriter, req *http.Request, tokenResponse
 		return nil, err
 	}
 	respJSON := string(bytes)
-	log.Infof("github user response status:%d  body:%s", userResp.StatusCode, respJSON)
 	var githubUserResponse data.GithubUserResponse
 	if err = util.FromJSONString(respJSON, &githubUserResponse); err != nil {
 		return nil, err

@@ -33,7 +33,7 @@ type GenericResponse struct {
 type ResultListResponse struct {
 	GenericResponse
 	ResultList interface{} `json:",omitempty"` //结果集
-	PageInfo
+	PageInfo   `json:",omitempty"`
 }
 
 // ResultResponse 单结果返回
@@ -44,8 +44,9 @@ type ResultResponse struct {
 
 // PageInfo 分页信息
 type PageInfo struct {
-	PageIndex int64 `json:",omitempty" schema:"page_index"`
-	PageSize  int64 `json:",omitempty" schema:"page_size"`
+	PageIndex int64 `schema:"page_index"`
+	PageSize  int64 `schema:"page_size"`
+	Total     int64
 }
 
 // NewFailedResponse 新的错误回应(带状态码)
@@ -86,6 +87,7 @@ func NewPageInfoResultListResponse(data interface{}, pageInfo *PageInfo) *Result
 		PageInfo: PageInfo{
 			PageIndex: pageInfo.PageIndex,
 			PageSize:  pageInfo.PageSize,
+			Total:     pageInfo.Total,
 		},
 		ResultList: data,
 	}
@@ -242,34 +244,78 @@ type FriendListResponse struct {
 
 // AdminArticleResponse ...
 type AdminArticleResponse struct {
-	ArticleID    uint64
-	UserID       uint
-	UserLogin    string
-	Title        string
-	Content      string
-	LastEditDate time.Time
-	Status       CommonType
+	ArticleID uint64
+	UserID    uint
+	UserLogin string
+	Title     string
+	Content   string
+	CreateAt  time.Time
+	UpdateAt  time.Time
+	Status    CommonType
 }
 
 // AdminPhotoResponse ...
 type AdminPhotoResponse struct {
-	AlbumID      uint64
-	UserID       uint
-	UserLogin    string
-	AlbumName    string
-	PhotoName    string
-	FileSize     int64
-	LastEditDate time.Time
-	Status       CommonType
+	AlbumID           uint64
+	UserID            uint
+	UserLogin         string
+	AlbumName         string
+	PhotoName         string
+	PhotoOriginalName string
+	FileSize          int64
+	CreateAt          time.Time
+	Status            CommonType
 }
 
 // AdminCommentResponse ...
 type AdminCommentResponse struct {
-	ArticleID    uint64
-	CommentID    uint64
-	UserID       uint
-	UserLogin    string
-	Content      string
-	LastEditDate time.Time
-	Status       CommonType
+	ArticleID uint64
+	CommentID uint64
+	UserID    uint
+	UserLogin string
+	Content   string
+	CreateAt  time.Time
+	Status    CommonType
+}
+
+// AdminUserResponse 返回
+type AdminUserResponse struct {
+	UserID    uint
+	UserLogin string
+	IsAdmin   bool
+	Status    string
+	Blog      string
+	Email     string
+	Localtion string
+	CreateAt  time.Time
+	UpdateAt  time.Time
+}
+
+// CommentCreateAtSortDESC 根据create at 逆序排序
+type CommentCreateAtSortDESC []*AdminCommentResponse
+
+func (a CommentCreateAtSortDESC) Len() int {
+	return len(a)
+}
+
+func (a CommentCreateAtSortDESC) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
+}
+
+func (a CommentCreateAtSortDESC) Less(i, j int) bool {
+	return a[i].CreateAt.After(a[j].CreateAt)
+}
+
+type PhotoCreateAtSortDESC []*AdminPhotoResponse
+
+func (a PhotoCreateAtSortDESC) Len() int {
+	return len(a)
+}
+
+func (a PhotoCreateAtSortDESC) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
+}
+
+func (a PhotoCreateAtSortDESC) Less(i, j int) bool {
+	return a[i].CreateAt.After(a[j].CreateAt)
 }

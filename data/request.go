@@ -4,6 +4,26 @@ import "time"
 
 // 一些请求的结构体
 
+// MongoCondition 过滤条件
+type MongoCondition string
+
+var (
+	// MongoTag tag name
+	MongoTag = "mongo"
+
+	// MongoEqual 相等
+	MongoEqual MongoCondition = "equal"
+
+	// MongoLessThan 小于
+	MongoLessThan MongoCondition = "lt"
+
+	// MongoGreatThan 大于
+	MongoGreatThan MongoCondition = "gt"
+
+	// MongoLike like
+	MongoLike MongoCondition = "like"
+)
+
 // AddArticleRequest 添加文章请求
 type AddArticleRequest struct {
 	Title      string   `validate:"required,min=10"`
@@ -84,36 +104,39 @@ type ArticleMaintainQuery struct {
 
 // DateInterval 时间区间
 type DateInterval struct {
-	DateFrom *time.Time `schema:"date_from"`
-	DateTo   *time.Time `schema:"date_to"`
+	DateFrom *time.Time `schema:"date_from" mongo:"gt"`
+	DateTo   *time.Time `schema:"date_to" mongo:"lt"`
 }
 
 // AdminArticleQuery 管理文章查询
 type AdminArticleQuery struct {
-	ArticleID uint64     `schema:"article_id"`
+	ArticleID uint64     `schema:"article_id" mongo:"equal"`
 	UserLogin string     `schema:"user_login"`
-	Title     string     `schema:"title"`
-	Content   string     `schema:"content"`
-	Status    CommonType `schema:"status"`
+	UserID    uint       `schema:"-" mongo:"equal"`
+	Title     string     `schema:"title" mongo:"like"`
+	Content   string     `schema:"content" mongo:"like"`
+	Status    CommonType `schema:"status" mongo:"equal"`
 	PageInfo
 	DateInterval
 }
 
 // AdminPhotoQuery ...
 type AdminPhotoQuery struct {
-	AlbumID   uint64     `schema:"album_id"`
+	AlbumID   uint64     `schema:"album_id" mongo:"equal"`
 	UserLogin string     `schema:"user_login"`
-	Status    CommonType `schame:"status"`
+	UserID    uint       `schema:"-" mongo:"equal"`
+	Status    CommonType `schama:"status" mongo:"equal"`
 	PageInfo
 	DateInterval
 }
 
 // AdminCommentQuery ...
 type AdminCommentQuery struct {
-	ArticleID uint64     `schema:"article_id"`
+	ArticleID uint64     `schema:"article_id" mongo:"equal"`
 	CommentID uint64     `schema:"comment_id"`
 	UserLogin string     `schema:"user_login"`
-	Status    CommonType `schema:"status"`
+	UserID    uint       `schema:"-" mongo:"equal"`
+	Status    CommonType `schema:"status" mongo:"equal"`
 	PageInfo
 	DateInterval
 }
