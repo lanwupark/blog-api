@@ -11,7 +11,7 @@
  Target Server Version : 50732
  File Encoding         : 65001
 
- Date: 27/12/2020 17:20:46
+ Date: 17/01/2021 20:30:43
 */
 
 SET NAMES utf8mb4;
@@ -29,7 +29,7 @@ CREATE TABLE `categories` (
   `update_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`category_id`),
   KEY `fk_category_user` (`article_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 -- ----------------------------
 -- Table structure for friends
@@ -39,7 +39,7 @@ CREATE TABLE `friends` (
   `friends_id` int(11) NOT NULL AUTO_INCREMENT,
   `from_user_id` int(20) NOT NULL,
   `to_user_id` int(20) NOT NULL,
-  `status` char(1) COLLATE utf8mb4_bin NOT NULL COMMENT 'Y:已添加\nD:已拒绝\nS:等待验证\nR:等待同意',
+  `status` char(1) COLLATE utf8mb4_bin NOT NULL COMMENT 'Y:已添加\nD:已拒绝\nW:等待验证',
   `create_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `update_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`friends_id`)
@@ -59,7 +59,7 @@ CREATE TABLE `like` (
   PRIMARY KEY (`like_id`) USING BTREE,
   KEY `fk_favorites_user` (`user_id`),
   CONSTRAINT `fk_favorites_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 -- ----------------------------
 -- Table structure for users
