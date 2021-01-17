@@ -32,6 +32,9 @@ type AdminCommentQueryKey struct{}
 // AdminUserQueryKey ...
 type AdminUserQueryKey struct{}
 
+// AdminFeedbackQueryKey ...
+type AdminFeedbackQueryKey struct{}
+
 // NewAdminHandler new admin handler
 func NewAdminHandler() *AdminHanlder {
 	return &AdminHanlder{}
@@ -176,6 +179,17 @@ func (AdminHanlder) UserUpdate(rw http.ResponseWriter, req *http.Request) {
 	RespondStatusOk(rw)
 }
 
+// GetFeedback 获取用户反馈
+func (AdminHanlder) GetFeedback(rw http.ResponseWriter, req *http.Request) {
+	pageInfo := req.Context().Value(AdminFeedbackQueryKey{}).(*data.PageInfo)
+	resp, err := adminservice.GetFeedback(pageInfo)
+	if err != nil {
+		RespondInternalServerError(rw, err)
+		return
+	}
+	util.ToJSON(resp, rw)
+}
+
 // GetRoutes 获取路由配置
 func (admin *AdminHanlder) GetRoutes() []*config.Route {
 	articleQuery := &config.Route{
@@ -226,5 +240,11 @@ func (admin *AdminHanlder) GetRoutes() []*config.Route {
 		Handler:         admin.UserUpdate,
 		MiddlewareFuncs: []mux.MiddlewareFunc{MiddlewareRequireAdminPermission},
 	}
-	return []*config.Route{articleQuery, articleUpdate, photoQuery, photoUpdate, commentQuery, commentUpdate, userQuery, userUpdate}
+	feedback := &config.Route{
+		Method:          http.MethodGet,
+		Path:            "/admin/feedback",
+		Handler:         admin.GetFeedback,
+		MiddlewareFuncs: []mux.MiddlewareFunc{MiddlewareRequireAdminPermission, MiddlewareAdminFeedbackQueryValidation},
+	}
+	return []*config.Route{articleQuery, articleUpdate, photoQuery, photoUpdate, commentQuery, commentUpdate, userQuery, userUpdate, feedback}
 }

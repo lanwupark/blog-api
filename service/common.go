@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/apex/log"
 	"github.com/lanwupark/blog-api/data"
@@ -42,6 +43,7 @@ func (CommonService) AddFeedback(user *data.TokenClaimsSubject, request *data.Fe
 		Description: request.Description,
 		Contact:     request.Contact,
 		UserLogin:   user.UserLogin,
+		UpdateAt:    time.Now(),
 	}
 	coll := conn.MongoDB.Collection(data.MongoCollectionFeedback)
 	coll.InsertOne(context.TODO(), &feedback)

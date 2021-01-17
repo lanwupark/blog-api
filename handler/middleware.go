@@ -286,6 +286,14 @@ func MiddlewareAdminUserQueryValidation(next http.Handler) http.Handler {
 	})
 }
 
+// MiddlewareAdminFeedbackQueryValidation 反馈查询中间件
+func MiddlewareAdminFeedbackQueryValidation(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		var pageInfo data.PageInfo
+		decodeQueryStringAndDoNextHandler(next, rw, req, AdminFeedbackQueryKey{}, &pageInfo)
+	})
+}
+
 // checkID 检查路径上的id
 func checkID(rw http.ResponseWriter, req *http.Request, key string) (uint64, bool) {
 	idStr, ok := mux.Vars(req)[key]

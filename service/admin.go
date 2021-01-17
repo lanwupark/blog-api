@@ -277,6 +277,27 @@ func (AdminService) UserUpdate(userID uint, status data.CommonType) error {
 	return userdao.UpdateUserStatus(userID, status)
 }
 
+// GetFeedback 查询反馈
+func (AdminService) GetFeedback(pageInfo *data.PageInfo) (*data.ResultListResponse, error) {
+	option := getPageFindOption(pageInfo)
+	coll := conn.MongoDB.Collection(data.MongoCollectionFeedback)
+	cursor, err := coll.Find(context.TODO(), bson.D{}, option)
+	if err != nil {
+		return nil, err
+	}
+	feedbacks := []*data.Feedback{}
+	if err = cursor.All(context.TODO(), &feedbacks); err != nil {
+		return nil, err
+	}
+	// pageInfo
+	pageInfo.PageSize = int64(len(feedbacks))
+	// total
+	if pageInfo.Total, err = coll.CountDocuments(context.TODO(), bson.D{}); err != nil {
+		return nil, err
+	}
+	return data.NewPageInfoResultListResponse(feedbacks, pageInfo), nil
+}
+
 // GenerateMongoFilter 利用反射 src的tag(mongo)的条件来生成filter条件 字段名的小写作为key value作为值
 func GenerateMongoFilter(filter bson.M, src interface{}) error {
 	// 判断是否是指针类型

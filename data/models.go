@@ -248,4 +248,5 @@ type Feedback struct {
 	UserLogin   string //为了后面好看 就不满足范式了
 	Description string
 	Contact     string
+	UpdateAt    time.Time
 }

@@ -24,6 +24,12 @@ func NewCommonHandler() *CommonHandler {
 	return &CommonHandler{}
 }
 
+// RedirectToYuque 重定向到语雀
+func (CommonHandler) RedirectToYuque(rw http.ResponseWriter, req *http.Request) {
+	http.Redirect(rw, req, "https://www.yuque.com/lanwupark/blog", http.StatusMovedPermanently)
+
+}
+
 // GenerateID 生成id
 func (CommonHandler) GenerateID(rw http.ResponseWriter, req *http.Request) {
 	id := util.MustGetNextID()
@@ -45,6 +51,12 @@ func (CommonHandler) Feedback(rw http.ResponseWriter, req *http.Request) {
 
 // GetRoutes 实现接口
 func (ch *CommonHandler) GetRoutes() []*config.Route {
+	redirect := &config.Route{
+		Method:          http.MethodGet,
+		Path:            "/",
+		Handler:         ch.RedirectToYuque,
+		MiddlewareFuncs: []mux.MiddlewareFunc{},
+	}
 	generateID := &config.Route{
 		Method:          http.MethodGet,
 		Path:            "/common/generate_id",
@@ -57,5 +69,5 @@ func (ch *CommonHandler) GetRoutes() []*config.Route {
 		Handler:         ch.Feedback,
 		MiddlewareFuncs: []mux.MiddlewareFunc{MiddlewareOptionalAuthorization, MiddlewareFeedbackValidation},
 	}
-	return []*config.Route{generateID, feedback}
+	return []*config.Route{redirect, generateID, feedback}
 }
