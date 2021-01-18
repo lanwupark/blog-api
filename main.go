@@ -55,10 +55,10 @@ func registerHTTPRequestHanlders() {
 	router.AddHTTPRequestHanlder(handler.NewAdminHandler())
 }
 
-// tickerFunc 定时函数 每小时重新设置一次排行
+// tickerFunc 定时函数 每30分钟重新设置一次排行
 func tickerFunc() {
 	service.CalculateSort()
-	ticker := time.NewTicker(1 * time.Hour)
+	ticker := time.NewTicker(30 * time.Minute)
 	go func(ticker *time.Ticker) {
 		for {
 			<-ticker.C

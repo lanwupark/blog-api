@@ -135,11 +135,11 @@ func clientDo(req *http.Request) *http.Response {
 // 参数校验 必须要有code和referer
 func parametersCheck(rw http.ResponseWriter, req *http.Request) bool {
 	// referer url  必须要有referer
-	if req.Referer() == "" {
-		rw.WriteHeader(http.StatusForbidden)
-		util.ToJSON(data.NewFailedResponse("are you serious?", http.StatusBadRequest), rw)
-		return false
-	}
+	// if req.Referer() == "" {
+	// 	rw.WriteHeader(http.StatusForbidden)
+	// 	util.ToJSON(data.NewFailedResponse("are you serious?", http.StatusForbidden), rw)
+	// 	return false
+	// }
 	code := req.URL.Query().Get("code")
 	// 没有或者长度为0 或者为""
 	if code == "" {

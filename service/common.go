@@ -95,11 +95,14 @@ func CalculateSort() {
 		}
 	}
 	// 存储文章排行
-	res := rds.RPush(ctx, RedisRankKeyArticle, articleIDs)
-	log.Info("set article rank")
-	if res.Err() != nil {
-		panic(res.Err())
+	if len(articleIDs) > 0 {
+		res := rds.RPush(ctx, RedisRankKeyArticle, articleIDs)
+		log.Info("set article rank")
+		if res.Err() != nil {
+			panic(res.Err())
+		}
 	}
+
 	// 存储每个用户的文章排行
 	for userid, val := range userMap {
 		key := strings.Replace(RedisRankKeyUserArticleKey, "${user_id}", strconv.Itoa(int(userid)), 1)
@@ -131,9 +134,11 @@ func CalculateSort() {
 	}
 	// 存储常用分类
 	rds.Del(ctx, RedisRankKeyCategoryKey)
-	res = rds.RPush(ctx, RedisRankKeyCategoryKey, categories)
-	if res.Err() != nil {
-		panic(res.Err())
+	if len(categories) > 0 {
+		res := rds.RPush(ctx, RedisRankKeyCategoryKey, categories)
+		if res.Err() != nil {
+			panic(res.Err())
+		}
 	}
 	log.Info("set categories rank over")
 }
