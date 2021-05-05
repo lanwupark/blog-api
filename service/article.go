@@ -203,6 +203,11 @@ func (ArticleService) GetArticleDetail(articleID uint64) (*data.ArticleResponse,
 		return nil, err
 	}
 	articleResp := article.TreeView()
+	// # issue 增加查询UserLogin字段
+	articleResp.UserLogin, err = userdao.SelectUserLoginByUserID(article.UserID)
+	if err != nil {
+		return nil, err
+	}
 	likes, err := likedao.SelectByArticleID(articleID)
 	if err != nil {
 		return nil, err

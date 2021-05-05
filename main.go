@@ -23,7 +23,7 @@ func init() {
 	flag.StringVar(&c.RedisURL, "redis-url", "redis://localhost:6379/0", "the redis db connection string")
 	flag.StringVar(&c.MongoDatabase, "mongo-db", "blog", "the default mongodb database")
 	flag.StringVar(&c.OAuthClientID, "oauth-id", "0fbcd40d4a1e12920596", "github oauth client id")
-	flag.StringVar(&c.OAuthClientSecret, "oauth-secret", "e449dfcd57e98903e50a4ee5208475ee0009c39a", "github oauth client secret")
+	flag.StringVar(&c.OAuthClientSecret, "oauth-secret", "cad056d2b24e595238ce7bd148abfc9c89e5fc54", "github oauth client secret")
 	flag.StringVar(&c.FileBaseDir, "file-base-dir", "files", "file base dir")
 	flag.IntVar(&c.FileMaxSize, "file-max-size", 1024*1024*4, "file max size")
 }

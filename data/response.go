@@ -133,6 +133,7 @@ type UserResponse struct {
 type ArticleResponse struct {
 	ArticleID  uint64
 	UserID     uint
+	UserLogin  string
 	Title      string
 	Content    string
 	Comments   []*CommentResponse

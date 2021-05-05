@@ -11,7 +11,6 @@ import (
 
 	"github.com/apex/httplog"
 	"github.com/apex/log"
-	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/lanwupark/blog-api/data"
 	"github.com/lanwupark/blog-api/util"
@@ -60,6 +59,29 @@ func NewRouter() *Router {
 	}
 }
 
+// CORSRouterDecorator applies CORS headers to a mux.Router
+type CORSRouterDecorator struct {
+	R *mux.Router
+}
+
+// 使用装饰者模式解决CORS问题
+// ServeHTTP wraps the HTTP server enabling CORS headers.
+// For more info about CORS, visit https://www.w3.org/TR/cors/
+func (c *CORSRouterDecorator) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	if origin := req.Header.Get("Origin"); origin != "" {
+		rw.Header().Set("Access-Control-Allow-Origin", origin)
+		rw.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		rw.Header().Set("Access-Control-Allow-Headers", "Accept, Accept-Language, Content-Type, X-Requested-With, Authorization")
+		rw.Header().Set("Access-Control-Allow-Credentials", "true")
+	}
+	// Stop here if its Preflighted OPTIONS request
+	if req.Method == "OPTIONS" {
+		return
+	}
+
+	c.R.ServeHTTP(rw, req)
+}
+
 // Config 路由配置
 func (r *Router) Config(configs *Configs) {
 	router := r.router
@@ -72,12 +94,23 @@ func (r *Router) Config(configs *Configs) {
 	router.Methods(http.MethodGet).Subrouter().Handle(filePath, fileHandler)
 	log.Infof("route path: %-70s method: %s", filePath, http.MethodGet)
 
-	// CORS 跨域资源访问
-	corsHanlder := handlers.CORS(handlers.AllowedOrigins([]string{"*"}))
-
+	// // CORS 跨域资源访问
+	// _ = handlers.CORS(
+	// 	handlers.AllowedMethods([]string{
+	// 		http.MethodGet,
+	// 		http.MethodPost,
+	// 		http.MethodPut,
+	// 		http.MethodPatch,
+	// 		http.MethodDelete,
+	// 		http.MethodOptions,
+	// 		http.MethodHead,
+	// 	}),
+	// 	handlers.AllowedOrigins([]string{"*"}),
+	// 	handlers.AllowedHeaders([]string{"X-Requested-With"}))
+	cors := &CORSRouterDecorator{router}
 	server = &http.Server{
 		Addr:         configs.BindAdreess,
-		Handler:      corsHanlder(httplog.New(router)), //跨域访问+ httplog中间件
+		Handler:      httplog.New(cors), //跨域访问 +httplog 中间件
 		IdleTimeout:  120 * time.Second,
 		ReadTimeout:  60 * time.Second, //不要设小了 免得debug找半天
 		WriteTimeout: 60 * time.Second,

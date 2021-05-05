@@ -76,13 +76,11 @@ func (OAuthHandler) LoginOAuth(rw http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	// ---------------------4---------------------
-	user, err := userdao.Upsert(githubUserResponse)
+	user, err := userdao.Upsert(githubUserResponse) //4
 	if err != nil {
 		panic(err)
 	}
-	// ---------------------5---------------------
-	tokenSubject := &data.TokenClaimsSubject{
+	tokenSubject := &data.TokenClaimsSubject{ //5
 		UserID:      user.UserID,
 		UserLogin:   user.UserLogin,
 		IsAdmin:     user.IsAdmin,
