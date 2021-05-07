@@ -65,6 +65,8 @@ func (ArticleService) AddArticle(article *data.Article, categories []string) (ui
 		log.Warn("rollback transaction")
 		sqlTx.Rollback()
 	}
+	// #issue 解决添加文章展示无法显示问题 开一个协程重新计算redis里的缓存
+	go CalculateSort()
 	return articleID, err
 }
 
@@ -369,6 +371,7 @@ func (ArticleService) GetUsualCategories() ([]string, error) {
 // 如果 category name 和 content都为空 直接从redis里查热门数据article id再查mongo
 // 如果只有category name的话 从redis里查出该分类的集合
 // 剩下的就直接查mongo
+// #issue 这里有一个Bug 当用户新增文章时 缓存没更新的话 是查不到才添加的数据的 所以在添加文章时再掉一次重新排序这种临时的方法来解决这一问题
 func (articleservice ArticleService) ArticleMaintainQuery(query *data.ArticleMaintainQuery) ([]*data.ArticleMaintainResponse, *data.PageInfo, error) {
 	resp := []*data.ArticleMaintainResponse{}
 	rds := conn.Redis

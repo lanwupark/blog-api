@@ -382,7 +382,7 @@ func isDefaultValue(value reflect.Value) bool {
 
 // 设置搜索条件 分页 排序
 func getPageFindOption(pageInfo *data.PageInfo) *options.FindOptions {
-	if pageInfo.PageIndex < data.DefaultPageIndex {
+	if pageInfo.PageIndex <= data.DefaultPageIndex {
 		pageInfo.PageIndex = data.DefaultPageIndex
 	}
 	if pageInfo.PageSize <= 0 {

@@ -79,6 +79,9 @@ func (AlbumService) AddPhoto(userID uint, albumID uint64, fileName string, reade
 		n, err := bufReader.Read(buf)
 		// 文件读取到末尾
 		if err == io.EOF {
+			// 写入最后一次缓存
+			bufWriter.Write(buf[:n])
+			size += n
 			break
 		}
 		// 其它错误
