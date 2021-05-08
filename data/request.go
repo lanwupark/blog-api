@@ -52,7 +52,7 @@ type FeedbackRequest struct {
 // AddAlbumRequest 添加相册请求
 type AddAlbumRequest struct {
 	AlbumID     uint64 `validate:"required"`
-	Title       string `validate:"required,min=10"`
+	Title       string `validate:"required,min=4"`
 	CoverName   string
 	Description string
 	Location    string

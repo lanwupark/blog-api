@@ -45,6 +45,15 @@ func TestExpired(t *testing.T) {
 	assert.Nil(user)
 }
 
+func TestLogUser(t *testing.T) {
+	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MjA0NzU0NDYsImlzcyI6ImVhbnNvbiIsIm5iZiI6MTYyMDQ3MzY0Niwic3ViIjoie1wiVXNlcklEXCI6NTc0OTAwMjIsXCJVc2VyTG9naW5cIjpcImVhbnNvbjAyM1wiLFwiSXNBZG1pblwiOnRydWUsXCJHaXRodWJUb2tlblwiOlwiZ2hvX1h2NE10UjhtUjRVQ2JsUDZWT2Q4azdVOFJ0emJoRzE1UDdNbVwifSJ9.aJlBlW62Q-UO_2U0KpChwaHi98EEpFftZALq3hrWBwI"
+	user, err := util.ParseToken(token)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(user)
+
+}
 func TestUUID(t *testing.T) {
 	t.Log(uuid.New().String())
 }

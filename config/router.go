@@ -73,6 +73,7 @@ func (c *CORSRouterDecorator) ServeHTTP(rw http.ResponseWriter, req *http.Reques
 		rw.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 		rw.Header().Set("Access-Control-Allow-Headers", "Accept, Accept-Language, Content-Type, X-Requested-With, Authorization")
 		rw.Header().Set("Access-Control-Allow-Credentials", "true")
+		rw.Header().Set("Access-Control-Expose-Headers", "Set-Token")
 	}
 	// Stop here if its Preflighted OPTIONS request
 	if req.Method == "OPTIONS" {
