@@ -51,6 +51,7 @@ func (ArticleDao) Select(articleIDs []uint64) ([]*data.Article, error) {
 	filter := bson.D{
 		{"articleid", bson.D{
 			{"$in", articleIDs},
+			{"status", data.Normal}, // # issue 批量搜索出正常状态的数据
 		}},
 	}
 	cursor, err := coll.Find(context.TODO(), filter)
